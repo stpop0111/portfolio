@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Intro — Custom Shader Glass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #f5f5f0;
+    --text-light: #e8eaec;
+    --text-dark: #0a0a0a;
+    --accent: #1d4ed8;
+    --font-display: 'Instrument Serif', serif;
+    --font-sans: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text-dark);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  #three-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100vh !important;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  /* === Hero === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0 24px;
+    position: relative;
+    z-index: 2;
+  }
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin-bottom: 20px;
+  }
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 14vw, 140px);
+    font-style: italic;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    text-align: center;
+  }
+  .hero-arrow {
+    margin-top: 48px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--text-light);
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* === Intro section === */
+  .intro {
+    padding: 30vh 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  .intro-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: transparent;  /* ★ Three.js側で表示するため透明 */
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .intro-text {
+    font-family: var(--font-display);
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 6vw;
+  }
+
+  .line {
+    font-size: clamp(30px, 7.5vw, 76px);
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: transparent;  /* ★ Three.js側で表示するため透明 */
+    margin: 0.1em 0;
+  }
+  .line em {
+    font-style: italic;
+  }
+  .line .accent {
+    /* HTMLは透明、Three.js側で青を再現 */
+    font-style: italic;
+  }
+  .line.spacer {
+    height: 1.5em;
+  }
+
+  /* === Outro === */
+  .outro {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+    position: relative;
+    z-index: 2;
+  }
+  .outro-text {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: clamp(32px, 9vw, 110px);
+    letter-spacing: -0.02em;
+    text-align: center;
+  }
+
+  /* === UI overlays === */
+  .top-brand {
+    position: fixed;
+    top: 16px;
+    left: 20px;
+    z-index: 10;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 20px;
+    pointer-events: none;
+  }
+  .top-meta {
+    position: fixed;
+    top: 18px;
+    right: 20px;
+    z-index: 10;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-align: right;
+    color: var(--text-light);
+    pointer-events: none;
+    line-height: 1.5;
+  }
+
+  @media (min-width: 768px) {
+    .top-brand { top: 24px; left: 32px; font-size: 24px; }
+    .top-meta { top: 24px; right: 32px; font-size: 10px; }
+    .intro-text { padding: 0; }
+  }
+
+  /* === コントロールパネル === */
+  .controls-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 20;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 0.5px solid rgba(10, 10, 10, 0.15);
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    color: var(--text-dark);
+    font-family: var(--font-mono);
+  }
+  .controls-toggle:hover { transform: scale(1.08); }
+  .controls-toggle.hidden { opacity: 0; pointer-events: none; }
+
+  .controls-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 21;
+    width: calc(100vw - 40px);
+    max-width: 300px;
+    background: rgba(245, 245, 240, 0.92);
+    backdrop-filter: blur(24px) saturate(1.2);
+    -webkit-backdrop-filter: blur(24px) saturate(1.2);
+    border: 0.5px solid rgba(10, 10, 10, 0.1);
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(10, 10, 10, 0.1);
+  }
+  .controls-panel.open { display: flex; }
+
+  .controls-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 0.5px solid rgba(10, 10, 10, 0.1);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(10, 10, 10, 0.6);
+  }
+
+  .controls-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: rgba(10, 10, 10, 0.5);
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .ctrl-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ctrl-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .ctrl-label {
+    font-size: 12px;
+    color: var(--text-dark);
+  }
+  .ctrl-label code {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(10, 10, 10, 0.5);
+    margin-left: 4px;
+  }
+  .ctrl-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-dark);
+  }
+
+  .ctrl-row input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2px;
+    background: rgba(10, 10, 10, 0.15);
+    border-radius: 1px;
+    outline: none;
+    cursor: pointer;
+  }
+  .ctrl-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text-dark);
+    cursor: pointer;
+    border: 2px solid #fff;
+  }
+  .ctrl-row input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text-dark);
+    cursor: pointer;
+    border: 2px solid #fff;
+  }
+
+  .preset-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .preset-btn {
+    background: transparent;
+    border: 0.5px solid rgba(10, 10, 10, 0.15);
+    color: var(--text-dark);
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .preset-btn:hover { background: rgba(10, 10, 10, 0.05); }
+  .preset-btn.active { background: var(--text-dark); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="top-brand">Seita</div>
+<div class="top-meta">
+  Portfolio<br>
+  / Intro
+</div>
+
+<canvas id="three-canvas"></canvas>
+
+<section class="hero">
+  <div class="hero-eyebrow">SCROLL TO EXPERIENCE</div>
+  <h1 class="hero-title">Text<br><em>×</em> Glass</h1>
+  <div class="hero-arrow">↓ SCROLL ↓</div>
+</section>
+
+<section class="intro" id="intro-section">
+  <div class="intro-label">— About Me</div>
+  <div class="intro-text" id="intro-text">
+    <p class="line">Hello, I'm <span class="accent">Seita</span>.</p>
+    <p class="line">A <em>full-stack developer</em></p>
+    <p class="line">based in <em>Japan</em>.</p>
+    <p class="line spacer"></p>
+    <p class="line">I lead a small team</p>
+    <p class="line">at an <em>e-commerce</em> company,</p>
+    <p class="line">where design meets engineering.</p>
+    <p class="line spacer"></p>
+    <p class="line">I work across <em>everything</em></p>
+    <p class="line">— from planning to coding,</p>
+    <p class="line">design to data analysis.</p>
+    <p class="line spacer"></p>
+    <p class="line">Building digital experiences</p>
+    <p class="line">that feel <em>thoughtful</em></p>
+    <p class="line">and just a little <em>magical</em>.</p>
+    <p class="line spacer"></p>
+    <p class="line">Always curious,</p>
+    <p class="line">always <em>learning</em>,</p>
+    <p class="line">always shipping.</p>
+  </div>
+</section>
+
+<section class="outro">
+  <div class="outro-text">Next, my <em>works</em>.</div>
+</section>
+
+<!-- ★ コントロールパネル -->
+<button class="controls-toggle" id="controls-toggle" aria-label="ガラス調整">⚙</button>
+
+<div class="controls-panel" id="controls-panel">
+  <div class="controls-header">
+    <span>Glass Controls</span>
+    <button class="controls-close" id="controls-close" aria-label="閉じる">×</button>
+  </div>
+
+  <div class="ctrl-row">
+    <div class="ctrl-top">
+      <span class="ctrl-label">色収差 <code>aberration</code></span>
+      <span class="ctrl-value" id="v-aberration">0.080</span>
+    </div>
+    <input type="range" id="aberration" min="0" max="0.3" step="0.005" value="0.08" />
+  </div>
+
+  <div class="ctrl-row">
+    <div class="ctrl-top">
+      <span class="ctrl-label">屈折強度 <code>refraction</code></span>
+      <span class="ctrl-value" id="v-refraction">0.18</span>
+    </div>
+    <input type="range" id="refraction" min="0" max="0.5" step="0.01" value="0.18" />
+  </div>
+
+  <div class="ctrl-row">
+    <div class="ctrl-top">
+      <span class="ctrl-label">屈折率 <code>ior</code></span>
+      <span class="ctrl-value" id="v-ior">1.45</span>
+    </div>
+    <input type="range" id="ior" min="1" max="2.5" step="0.01" value="1.45" />
+  </div>
+
+  <div class="ctrl-row">
+    <div class="ctrl-top">
+      <span class="ctrl-label">フレネル <code>fresnel</code></span>
+      <span class="ctrl-value" id="v-fresnel">0.40</span>
+    </div>
+    <input type="range" id="fresnel" min="0" max="2" step="0.05" value="0.4" />
+  </div>
+
+  <div class="ctrl-row">
+    <div class="ctrl-top">
+      <span class="ctrl-label">サンプル数 <code>samples</code></span>
+      <span class="ctrl-value" id="v-samples">12</span>
+    </div>
+    <input type="range" id="samples" min="3" max="16" step="1" value="12" />
+  </div>
+
+  <div class="ctrl-row">
+    <div class="ctrl-top">
+      <span class="ctrl-label">キューブサイズ <code>size</code></span>
+      <span class="ctrl-value" id="v-size">1.00</span>
+    </div>
+    <input type="range" id="size" min="0.4" max="2.5" step="0.05" value="1" />
+  </div>
+
+  <div class="ctrl-row">
+    <div class="ctrl-top">
+      <span class="ctrl-label">回転速度 <code>rotation</code></span>
+      <span class="ctrl-value" id="v-rotation">0.12</span>
+    </div>
+    <input type="range" id="rotation" min="0" max="0.5" step="0.01" value="0.12" />
+  </div>
+
+  <div>
+    <div class="ctrl-label" style="margin-bottom: 6px;">Preset</div>
+    <div class="preset-grid">
+      <button class="preset-btn active" data-preset="default">Default</button>
+      <button class="preset-btn" data-preset="subtle">Subtle</button>
+      <button class="preset-btn" data-preset="extreme">Extreme</button>
+      <button class="preset-btn" data-preset="prism">Prism</button>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+gsap.registerPlugin(ScrollTrigger);
+
+// ====================================
+// ★ Lenis（仮想スクロールで滑らかに）
+// ====================================
+const lenis = new Lenis({
+  duration: 1.2,
+  easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+  smoothWheel: true,
+  smoothTouch: false,  // iOSのタッチは標準慣性に任せる方が安定
+});
+
+// Lenisのスクロール → ScrollTrigger.update
+lenis.on('scroll', ScrollTrigger.update);
+
+// GSAPのtickerでLenisのrafを駆動（一元管理で滑らか）
+gsap.ticker.add((time) => {
+  lenis.raf(time * 1000);
+});
+gsap.ticker.lagSmoothing(0);
+
+// ====================================
+// ① （HTMLテキスト色変化は削除：Three.js側に移行）
+// ====================================
+// HTMLテキストは透明なので、色変化はThree.jsのシェーダーで実装する。
+// ScrollTriggerはcanvasの表示/非表示制御のみで使う（後段）。
+
+// ====================================
+// ② Three.js: カスタムシェーダーガラスキューブ
+// ====================================
+
+const isMobile = window.matchMedia('(max-width: 768px)').matches;
+const dpr = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);  // ★ SPはdpr上限1.5
+
+const canvas = document.getElementById('three-canvas');
+
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true,
+  alpha: true,
+  powerPreference: 'high-performance',
+});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(dpr);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+
+const scene = new THREE.Scene();
+scene.background = null;
+
+const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0, 6);
+
+// ★ 環境マップ（ガラスの反射用）
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+const envScene = new RoomEnvironment();
+scene.environment = pmremGenerator.fromScene(envScene, 0.04).texture;
+
+// ★ RenderTarget（カスタムシェーダーの2パスレンダリング用）
+const rtScale = isMobile ? 0.7 : 1.0;
+const renderTarget = new THREE.WebGLRenderTarget(
+  Math.floor(window.innerWidth * dpr * rtScale),
+  Math.floor(window.innerHeight * dpr * rtScale),
+  {
+    samples: isMobile ? 2 : 4,
+    format: THREE.RGBAFormat,
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+  }
+);
+
+// === 背景プレーン：自己紹介テキストを描画（emは斜め、他は通常） ===
+function createTextMask() {
+  const cvs = document.createElement('canvas');
+  const w = 2048;
+  const h = 4096;
+  cvs.width = w;
+  cvs.height = h;
+  const ctx = cvs.getContext('2d');
+
+  ctx.fillStyle = '#000';
+  ctx.textBaseline = 'middle';
+
+  // ★ 各行を「通常テキスト」と「斜体テキスト」のパーツ配列で定義
+  //   color指定があればその色で描画（アクセント用）
+  const ACCENT = '#1d4ed8';
+  const lineParts = [
+    [{ text: "Hello, I'm ", italic: false }, { text: "Seita", italic: true, color: ACCENT }, { text: ".", italic: false }],
+    [{ text: "A ", italic: false }, { text: "full-stack developer", italic: true }],
+    [{ text: "based in ", italic: false }, { text: "Japan", italic: true }, { text: ".", italic: false }],
+    [],
+    [{ text: "I lead a small team", italic: false }],
+    [{ text: "at an ", italic: false }, { text: "e-commerce", italic: true }, { text: " company,", italic: false }],
+    [{ text: "where design meets engineering.", italic: false }],
+    [],
+    [{ text: "I work across ", italic: false }, { text: "everything", italic: true }],
+    [{ text: "— from planning to coding,", italic: false }],
+    [{ text: "design to data analysis.", italic: false }],
+    [],
+    [{ text: "Building digital experiences", italic: false }],
+    [{ text: "that feel ", italic: false }, { text: "thoughtful", italic: true }],
+    [{ text: "and just a little ", italic: false }, { text: "magical", italic: true }, { text: ".", italic: false }],
+    [],
+    [{ text: "Always curious,", italic: false }],
+    [{ text: "always ", italic: false }, { text: "learning", italic: true }, { text: ",", italic: false }],
+    [{ text: "always shipping.", italic: false }],
+  ];
+
+  const fontSize = 90;
+  const baseFont = `${fontSize}px "Instrument Serif", serif`;
+  const italicFont = `italic ${fontSize}px "Instrument Serif", serif`;
+  const lineH = 140;
+  const totalH = lineParts.length * lineH;
+  const startY = (h - totalH) / 2 + lineH / 2;
+
+  lineParts.forEach((parts, lineIndex) => {
+    if (parts.length === 0) return;
+
+    const y = startY + lineIndex * lineH;
+
+    // 行全体の幅を計算（中央揃え用）
+    let totalWidth = 0;
+    parts.forEach(p => {
+      ctx.font = p.italic ? italicFont : baseFont;
+      totalWidth += ctx.measureText(p.text).width;
+    });
+
+    ctx.textAlign = 'left';
+    let x = (w - totalWidth) / 2;
+
+    parts.forEach(p => {
+      ctx.font = p.italic ? italicFont : baseFont;
+      ctx.fillStyle = p.color || '#000';  // ★ color指定があれば使う
+      ctx.fillText(p.text, x, y);
+      x += ctx.measureText(p.text).width;
+    });
+  });
+
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  return tex;
+}
+
+const bgMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uMask: { value: createTextMask() },
+    uScrollOffset: { value: 0.5 },
+    uLightColor: { value: new THREE.Color('#e8eaec') },  // ★ 薄い色
+    uDarkColor: { value: new THREE.Color('#0a0a0a') },   // ★ 黒
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D uMask;
+    uniform float uScrollOffset;
+    uniform vec3 uLightColor;
+    uniform vec3 uDarkColor;
+    varying vec2 vUv;
+
+    void main() {
+      vec2 uv = vUv;
+      uv.y = vUv.y - uScrollOffset + 0.5;
+
+      if (uv.y < 0.0 || uv.y > 1.0) discard;
+
+      vec4 sampled = texture2D(uMask, uv);
+      float alpha = sampled.a;
+      if (alpha < 0.01) discard;
+
+      // ★ 元の色を取得（premultipliedの除算）
+      vec3 originalColor = sampled.rgb / max(alpha, 0.001);
+
+      // ★ 青っぽいピクセルを判定（青チャンネルが他より明らかに高い）
+      float blueness = clamp(originalColor.b - (originalColor.r + originalColor.g) * 0.5, 0.0, 1.0);
+      blueness = smoothstep(0.1, 0.3, blueness);
+
+      // 縦方向のグラデーション（薄→濃）
+      float darkness = smoothstep(0.4, 0.55, vUv.y);
+
+      // 黒テキスト用：薄い灰 → 黒
+      vec3 blackColor = mix(uLightColor, uDarkColor, darkness);
+
+      // ★ 青テキスト用：薄い青 → 鮮やかな青
+      vec3 lightBlue = vec3(0.82, 0.86, 0.95);
+      vec3 darkBlue = vec3(0.114, 0.306, 0.847); // #1d4ed8
+      vec3 blueColor = mix(lightBlue, darkBlue, darkness);
+
+      // bluenessでブレンド
+      vec3 textColor = mix(blackColor, blueColor, blueness);
+
+      gl_FragColor = vec4(textColor, alpha);
+    }
+  `,
+  transparent: true,
+});
+
+// ★ プレーンを縦長に（テクスチャ 2048x4096 = 1:2 に合わせる）
+const bgPlane = new THREE.Mesh(new THREE.PlaneGeometry(10, 20), bgMaterial);
+bgPlane.position.z = -2;
+scene.add(bgPlane);
+
+// === ガラスキューブ：Y2Kな色収差カスタムシェーダー ===
+const glassMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uTexture: { value: null },
+    uIor: { value: 1.45 },
+    uAberration: { value: 0.08 },
+    uRefraction: { value: 0.18 },
+    uFresnel: { value: 0.4 },
+    uSamples: { value: isMobile ? 8 : 12 },
+  },
+  vertexShader: `
+    varying vec3 vWorldNormal;
+    varying vec3 vWorldPosition;
+    varying vec4 vScreenPosition;
+    void main() {
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldPosition = worldPos.xyz;
+      vWorldNormal = normalize(mat3(modelMatrix) * normal);
+      gl_Position = projectionMatrix * viewMatrix * worldPos;
+      vScreenPosition = gl_Position;
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D uTexture;
+    uniform float uIor;
+    uniform float uAberration;
+    uniform float uRefraction;
+    uniform float uFresnel;
+    uniform int uSamples;
+    varying vec3 vWorldNormal;
+    varying vec3 vWorldPosition;
+    varying vec4 vScreenPosition;
+
+    vec3 sat(vec3 rgb, float adjustment) {
+      const vec3 W = vec3(0.2125, 0.7154, 0.0721);
+      vec3 intensity = vec3(dot(rgb, W));
+      return mix(intensity, rgb, adjustment);
+    }
+
+    void main() {
+      vec2 uv = (vScreenPosition.xy / vScreenPosition.w) * 0.5 + 0.5;
+      vec3 viewDir = normalize(vWorldPosition - cameraPosition);
+      vec3 normal = normalize(vWorldNormal);
+
+      vec3 color = vec3(0.0);
+      float alphaSum = 0.0;
+      float total = 0.0;
+
+      // ★ 波長ごとに屈折率を変えて色収差を作る
+      for (int i = 0; i < 16; i++) {
+        if (i >= uSamples) break;
+        float slide = float(i) / float(uSamples) - 0.5;
+        float ior = uIor + slide * uAberration;
+        vec3 refr = refract(viewDir, normal, 1.0 / ior);
+        vec2 offsetUV = uv + refr.xy * uRefraction;
+        offsetUV = clamp(offsetUV, 0.0, 1.0);
+
+        // 波長ごとのスペクトル色
+        vec3 spectrum;
+        float t = float(i) / float(uSamples - 1);
+        if (t < 0.25) {
+          spectrum = mix(vec3(1.0, 0.0, 0.0), vec3(1.0, 0.5, 0.0), t * 4.0);
+        } else if (t < 0.5) {
+          spectrum = mix(vec3(1.0, 0.5, 0.0), vec3(0.0, 1.0, 0.0), (t - 0.25) * 4.0);
+        } else if (t < 0.75) {
+          spectrum = mix(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.5, 1.0), (t - 0.5) * 4.0);
+        } else {
+          spectrum = mix(vec3(0.0, 0.5, 1.0), vec3(0.5, 0.0, 1.0), (t - 0.75) * 4.0);
+        }
+
+        vec4 sampled = texture2D(uTexture, offsetUV);
+        color += sampled.rgb * spectrum;
+        alphaSum += sampled.a;
+        total += 1.0;
+      }
+
+      color /= total;
+      alphaSum /= total;
+      color *= 3.0;
+
+      float fresnelTerm = pow(1.0 - abs(dot(viewDir, normal)), 3.0);
+      vec3 finalColor = color + vec3(fresnelTerm * uFresnel);
+      finalColor = sat(finalColor, 1.2);
+
+      float finalAlpha = max(alphaSum, fresnelTerm * 0.6);
+
+      gl_FragColor = vec4(finalColor, finalAlpha);
+    }
+  `,
+  side: THREE.DoubleSide,
+  transparent: true,
+});
+
+const cubeSize = isMobile ? 1.1 : 1.4;
+const glassGeo = new RoundedBoxGeometry(cubeSize, cubeSize, cubeSize, isMobile ? 10 : 16, 0.1);
+const glassMesh = new THREE.Mesh(glassGeo, glassMaterial);
+glassMesh.rotation.set(0.4, 0.6, 0.2);
+scene.add(glassMesh);
+
+// === スクロール量を背景プレーンに同期（lerpで滑らかに） ===
+const introEl = document.getElementById('intro-text');
+
+let currentScrollOffset = 0.5;   // 現在値（lerpで滑らかに追従する側）
+let targetScrollOffset = 0.5;    // 目標値（スクロールイベントで即更新）
+
+function updateBackgroundOffset() {
+  const rect = introEl.getBoundingClientRect();
+  const screenCenterY = window.innerHeight / 2;
+  const scrollProgress = (screenCenterY - rect.top) / rect.height;
+  targetScrollOffset = Math.max(0, Math.min(1, scrollProgress));
+}
+
+window.addEventListener('scroll', updateBackgroundOffset, { passive: true });
+updateBackgroundOffset();
+currentScrollOffset = targetScrollOffset;  // 初期値を合わせる
+
+// === キャンバスの表示/非表示 ===
+ScrollTrigger.create({
+  trigger: '#intro-section',
+  start: 'top bottom',
+  end: 'bottom top',
+  onEnter: () => gsap.to(canvas, { opacity: 1, duration: 0.5 }),
+  onLeave: () => gsap.to(canvas, { opacity: 0, duration: 0.5 }),
+  onEnterBack: () => gsap.to(canvas, { opacity: 1, duration: 0.5 }),
+  onLeaveBack: () => gsap.to(canvas, { opacity: 0, duration: 0.5 }),
+});
+gsap.set(canvas, { opacity: 0 });
+
+// === アニメーションループ（2パスレンダリング） ===
+const clock = new THREE.Clock();
+let pointerX = 0, pointerY = 0;
+let rotationSpeed = 0.12;  // ★ animate内で使うのでここで宣言
+
+function handlePointer(x, y) {
+  pointerX = (x / window.innerWidth - 0.5) * 0.4;
+  pointerY = (y / window.innerHeight - 0.5) * 0.4;
+}
+window.addEventListener('mousemove', (e) => handlePointer(e.clientX, e.clientY));
+window.addEventListener('touchmove', (e) => {
+  if (e.touches[0]) handlePointer(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: true });
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  // スクロール量を毎フレーム lerp で滑らかに追従
+  currentScrollOffset += (targetScrollOffset - currentScrollOffset) * 0.15;
+  bgMaterial.uniforms.uScrollOffset.value = currentScrollOffset;
+
+  // ★ rotationSpeed でコントロール可能
+  glassMesh.rotation.y = 0.6 + t * rotationSpeed + pointerX * 0.3;
+  glassMesh.rotation.x = 0.4 + Math.sin(t * 0.2) * 0.08 + pointerY * 0.3;
+  glassMesh.position.y = Math.sin(t * 0.4) * 0.1;
+
+  // === 2パスレンダリング ===
+  glassMesh.visible = false;
+  renderer.setRenderTarget(renderTarget);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear();
+  renderer.render(scene, camera);
+
+  glassMaterial.uniforms.uTexture.value = renderTarget.texture;
+  glassMesh.visible = true;
+  renderer.setRenderTarget(null);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear();
+  renderer.render(scene, camera);
+}
+animate();
+
+// === Resize ===
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+    renderTarget.setSize(
+      Math.floor(w * dpr * rtScale),
+      Math.floor(h * dpr * rtScale)
+    );
+    ScrollTrigger.refresh();
+  }, 200);
+});
+
+// ====================================
+// ★ コントロールパネル
+// ====================================
+
+// 開閉
+const toggleBtn = document.getElementById('controls-toggle');
+const closeBtn = document.getElementById('controls-close');
+const panel = document.getElementById('controls-panel');
+
+toggleBtn.addEventListener('click', () => {
+  panel.classList.add('open');
+  toggleBtn.classList.add('hidden');
+});
+closeBtn.addEventListener('click', () => {
+  panel.classList.remove('open');
+  toggleBtn.classList.remove('hidden');
+});
+
+// スライダーバインド
+function bindSlider(id, callback, fmt) {
+  const slider = document.getElementById(id);
+  const valSpan = document.getElementById('v-' + id);
+  slider.addEventListener('input', () => {
+    const v = parseFloat(slider.value);
+    callback(v);
+    valSpan.textContent = fmt(v);
+  });
+}
+
+bindSlider('aberration', (v) => glassMaterial.uniforms.uAberration.value = v, v => v.toFixed(3));
+bindSlider('refraction', (v) => glassMaterial.uniforms.uRefraction.value = v, v => v.toFixed(2));
+bindSlider('ior',        (v) => glassMaterial.uniforms.uIor.value = v,        v => v.toFixed(2));
+bindSlider('fresnel',    (v) => glassMaterial.uniforms.uFresnel.value = v,    v => v.toFixed(2));
+bindSlider('samples',    (v) => glassMaterial.uniforms.uSamples.value = Math.round(v), v => String(Math.round(v)));
+bindSlider('size',       (v) => glassMesh.scale.set(v, v, v),                v => v.toFixed(2));
+bindSlider('rotation',   (v) => rotationSpeed = v,                            v => v.toFixed(2));
+
+// プリセット
+const presets = {
+  default: { aberration: 0.08,  refraction: 0.18, ior: 1.45, fresnel: 0.4, samples: 12, size: 1.0,  rotation: 0.12 },
+  subtle:  { aberration: 0.02,  refraction: 0.08, ior: 1.5,  fresnel: 0.3, samples: 8,  size: 0.85, rotation: 0.08 },
+  extreme: { aberration: 0.20,  refraction: 0.35, ior: 1.6,  fresnel: 0.8, samples: 14, size: 1.2,  rotation: 0.18 },
+  prism:   { aberration: 0.15,  refraction: 0.25, ior: 1.8,  fresnel: 0.4, samples: 16, size: 1.1,  rotation: 0.10 },
+};
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const p = presets[btn.dataset.preset];
+    Object.entries(p).forEach(([key, val]) => {
+      const slider = document.getElementById(key);
+      const valSpan = document.getElementById('v-' + key);
+      if (slider) {
+        slider.value = val;
+        // input イベントを発火させて値を反映
+        slider.dispatchEvent(new Event('input'));
+      }
+    });
+  });
+});
+</script>
+
+</body>
+</html>

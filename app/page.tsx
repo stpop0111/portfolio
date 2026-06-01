@@ -1,126 +1,203 @@
 'use client';
 
+// GSAP
 import gsap from 'gsap';
-import { useRef, useState, useEffect } from 'react';
 import { useGSAP } from '@gsap/react';
-import { RefreshCw } from 'lucide-react';
+// THREE
+import { Mesh } from 'three';
+import { useGLTF } from '@react-three/drei';
+import { useProgress } from '@react-three/drei';
+// React
+import { useRef, useState, useEffect } from 'react';
+// コンポーネントのインポート
+import { Curtains } from './components/hero/Curtains';
+import { ReloadButton } from './components/hero/ReloadButton';
+import { HeroText } from './components/hero/HeroText';
+import { CanvasPC } from './components/hero/Canvas/CanvasPC';
+import { CanvasNavKey } from './components/hero/Canvas/CanvasNavKey';
+
+// 3Dモデルのプリローディング
+useGLTF.preload('/models/model__keycap.glb');
+useGLTF.preload('/models/model__pc.glb');
 
 export default function Home() {
-  const [phase, setPhase] = useState<'loading' | 'changing' | 'title'>('loading');
+  const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>('loading'); // アニメーションのフェーズ管理
 
-  // ------------------------
+  // ----------------------------------------
   // リロードボタン
-  // ------------------------
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-
+  // ----------------------------------------
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false); // リロードボタン出現の管理
+  const { progress, total } = useProgress();
+  useEffect(() => {
+    if (progress === 100 && total > 0) {
+      const timer = setTimeout(() => {
+        setPhase('changing');
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [progress, total]);
   /* タイムアウト秒数後に変数を更新 */
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsRefreshing(true);
-    }, 5000); //TODO: 15000秒にする
+    }, 5000);
     return () => clearTimeout(timer);
   }, []);
 
-  /* ホバー時に矢印回転 */
-  const iconRef = useRef<SVGSVGElement>(null);
-  const handleHover = () => {
-    gsap.to(iconRef.current, { rotation: '+=180', duration: 0.5, ease: 'power4.inOut' });
-  };
-
-  // ------------------------
+  // ----------------------------------------
   // テキストのアニメーション
-  // ------------------------
-  const titleTextRef = useRef<HTMLDivElement>(null);
+  // ----------------------------------------
+  const heroTextRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
-      /* 点滅アニメーション */
+      /* アニメーション : ローディング */
       if (phase === 'loading') {
-        gsap.to('.textLoading', {
-          opacity: 0.3,
-          duration: 0.8,
-          repeat: -1,
-          yoyo: true,
-          ease: 'power1.inOut',
+        const tl = gsap.timeline({ repeat: -1 });
+        gsap.utils.toArray<Element>('.loading').forEach((char) => {
+          tl.to(char, { y: -2, duration: 0.1, ease: 'power2.out' }, '-=0.2')
+            .to(char, { y: 0, duration: 0.15, ease: 'power2.in', })
         });
       }
-      /* フェードアウトアニメーション */
+      /* アニメーション : タイトルの表示切り替え */
       if (phase === 'changing') {
-        const tl = gsap.timeline({
-          onComplete: () => setPhase('title'),
-        });
-
+        const tl = gsap.timeline({ onComplete: () => setPhase('title') });
         tl.to('.loading', {
           opacity: 0,
           filter: 'blur(20px)',
           duration: 0.8,
-          stagger: {
-            amount: 0.5,
-            from: 'center',
-          },
+          stagger: { amount: 0.5, from: 'center' },
           ease: 'power2.in',
-        });
-
-        tl.to(
-          '.title',
-          {
-            opacity: 1,
-            filter: 'blur(0px)',
-            duration: 0.8,
-            stagger: {
-              amount: 0.5,
-              from: 'random',
-            },
-            ease: 'power2.out',
-          },
-          '-=0.3',
-        );
+        })
+          .to( '.progressText', {
+              y: '100%',
+              duration: 0.8,
+              ease: 'bounce.out',
+            }, '<', )
+          .to( '.title', {
+              opacity: 1,
+              filter: 'blur(0px)',
+              duration: 0.8,
+              stagger: { amount: 0.5, from: 'random' },
+              ease: 'power2.out',
+            }, '-=0.3', );
       }
     },
-    { dependencies: [phase], scope: titleTextRef },
+    { dependencies: [phase] },
   );
 
+  // ----------------------------------------
+  // タイトル画面の表示
+  // ----------------------------------------
+
+  const canvasPCRef = useRef<Mesh>(null);
+  const canvasNavKeyRef = useRef<HTMLDivElement>(null);
+  const [showCurtain, setShowCurtain] = useState<boolean>(true);
+  const keyCaps = [
+    { label: 'ABOUT ME', x: -3, color: '#FAF3E1', textColor: '#222' },
+    { label: 'WORKS', x: -1, color: '#FA8112', textColor: '#f7f7f7' },
+    { label: 'CREATIVE', x: 1, color: '#F5E7C6', textColor: '#222' },
+    { label: 'ORIGINAL WORKS', x: 3, color: '#222222', textColor: '#f7f7f7' },
+  ];
+  /* title -> hero : タイトル画面に遷移してから*/
   useEffect(() => {
-    const timer = setTimeout(() => setPhase('changing'), 3000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (phase === 'title') {
+      const timer = setTimeout(() => setPhase('hero'), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [phase]);
+
+  useGSAP(
+    () => {
+      if (phase === 'hero') {
+        const tl = gsap.timeline();
+        tl.to('.curtain', {
+          y: '-100%',
+          duration: 0.5,
+          stagger: 0.08,
+          ease: 'power2.inOut',
+          onComplete: () => setShowCurtain(false),
+        }) // カーテンアップ => アニメーション終了後に状態変数を変更
+          .to('.titleBlock', { y: '-30vh', duration: 1.2, ease: 'power2.inOut' }, '>-0.5'); // タイトルが上に上がる
+        if (canvasPCRef.current) {
+          tl.from(canvasPCRef.current!.position, { y: -2, duration: 1.2, ease: 'power4.inOut' }, '<');
+        }
+        tl.to(
+          '.title',
+          { color: '#262626', duration: 1.2, stagger: { amount: 0.1, from: 'center' }, ease: 'power2.inOut' },
+          '<',
+        ) // タイトルの色が真ん中から黒色になる
+          .from(canvasNavKeyRef.current, { y: '+100%', duration: 1.2, ease: 'power2.inOut' }, '<') // タイトルの色が真ん中から黒色になる
+          .to('.titleText', { letterSpacing: '0.15em', duration: 1, ease: 'power2.inOut' }, '<') // タイトルの字間が広がる
+          .fromTo(
+            '.gradientOverlay',
+            { opacity: 0, y: '+100%' },
+            { opacity: 1, y: 0, duration: 1, ease: 'power2.out' },
+            '<',
+          ) // グラデーションが下から広がる
+          .to(
+            '.nameFirst',
+            {
+              scale: 1,
+              opacity: 1,
+              filter: 'blur(0px)',
+              duration: 0.3,
+              stagger: { amount: 0.2, from: 'start' },
+              ease: 'power2.out',
+            },
+            '>-0.6',
+          ) // 名前が前から表示
+          .to(
+            '.nameLast',
+            {
+              scale: 1,
+              opacity: 1,
+              filter: 'blur(0px)',
+              duration: 0.3,
+              stagger: { amount: 0.2, from: 'end' },
+              ease: 'power2.out',
+            },
+            '<',
+          ); // 苗字が後ろから表示
+      }
+    },
+    { dependencies: [phase] },
+  );
 
   // ------------------------
   // ページ
   // ------------------------
   return (
-    <main className='flex flex-1 items-center justify-center bg-zinc-600 text-zinc-50'>
-      <div ref={titleTextRef} className='relative'>
-        {phase !== 'title' && (
-          <span className='textLoading absolute inset-0 flex items-center justify-center'>
-            {'Loading...'.split('').map((char, i) => (
-              <span key={i} className='loading'>
-                {char}
-              </span>
-            ))}
-          </span>
-        )}
-        {phase !== 'loading' && (
-          <span className='textTitle text-5xl absolute inset-0 flex items-center justify-center'>
-            {'Portfolio'.split('').map((char, i) => (
-              <span key={i} className='title opacity-0 blur-[20px]'>
-                {char}
-              </span>
-            ))}
-          </span>
-        )}
-      </div>
-      {isRefreshing &&
-        phase === 'loading' && ( // 15秒後：ページリロードボタンの出現
-          <button
-            onClick={() => window.location.reload()}
-            className='cursor-pointer bg-zinc-50 px-4 py-2 text-zinc-800 rounded-xl flex items-center gap-2 hover:bg-zinc-800 hover:text-zinc-50 transition-colors duration-500 ease-in-out'
-            onMouseEnter={handleHover}
-            onMouseLeave={handleHover}
-          >
-            Reload <RefreshCw ref={iconRef} className='w-4 h-4' />
-          </button>
-        )}
+    <main className='flex flex-1 items-center justify-center bg-zinc-50 text-zinc-50'>
+      {/* 幕 */}
+      <Curtains
+        show={showCurtain}
+        colors={['bg-zinc-700', 'bg-zinc-600', 'bg-zinc-500', 'bg-zinc-400', 'bg-zinc-300', 'bg-zinc-200']}
+      />
+
+      {/* PCモデルの配置 */}
+      <CanvasPC ref={canvasPCRef} />
+
+      {phase === 'hero' && <CanvasNavKey ref={canvasNavKeyRef} keyCaps={keyCaps} />}
+
+      {/* グラデーション背景 */}
+      <div
+        className='gradientOverlay fixed inset-0 pointer-events-none'
+        style={{
+          background: 'linear-gradient(0deg,rgba(250, 243, 225, 1) 0%, rgba(255, 255, 225, 0) 100%)',
+          zIndex: 1,
+        }}
+      />
+
+      {/* タイトルテキスト */}
+      <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} />
+
+      {/* ページリロードボタン */}
+      {isRefreshing && phase === 'loading' && (
+        <div className='fixed z-50 bottom-8 left-1/2 -translate-x-1/2'>
+          <ReloadButton />
+        </div>
+      )}
     </main>
   );
 }
