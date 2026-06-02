@@ -8,9 +8,16 @@ import { Html, MeshTransmissionMaterial, useGLTF } from '@react-three/drei';
 import type { Group } from 'three';
 import type { Mesh } from 'three';
 // コンポーネント
-import type { KeyCapType } from './CanvasNavKey/index';
+import type { KeyCapType } from './index';
 
-export function KeyCap({ keyCap, onClick }: { keyCap: KeyCapType; onClick: (path: string) => void }) {
+export function KeyCap({ 
+  keyCap, 
+  onClick,
+  onHover  } : { 
+  keyCap: KeyCapType; 
+  onClick: (path: string) => void;
+  onHover: (label: string | null) => void;
+  }) {
   const groupRef = useRef<Group>(null);
   const { nodes } = useGLTF('/models/model__keycap.glb');
   const geometry = (nodes.key as Mesh).geometry;
@@ -27,13 +34,13 @@ export function KeyCap({ keyCap, onClick }: { keyCap: KeyCapType; onClick: (path
     const tl = gsap.timeline();
 
     tl.to(groupRef.current!.position, {
-      y: -0.5,
+      y: -0.2,
       duration: 0.15,
-      ease: 'bounce.out',
+      ease: 'power4.in',
     }).to(groupRef.current!.position, {
       y: 0,
       duration: 0.1,
-      ease: 'bounce.in',
+      ease: 'power4.out',
       onComplete: () => onClick(keyCap.path),
     });
   };
@@ -53,7 +60,7 @@ export function KeyCap({ keyCap, onClick }: { keyCap: KeyCapType; onClick: (path
   const FLOAT_CONFIG = {
     y: { speed: [0.6, 0.4], amp: [0.05, 0.1] }, // Y軸方向の浮遊アニメーション設定（上下動）
     rotY: { speed: [0.5, 0.5], amp: [0.15, 0.3] }, // Y軸周りの回転アニメーション設定（左右回転）
-    rotZ: { speed: [0.3, 0.5], amp: [0.1, 0.5] }, // Z軸周りの回転アニメーション設定
+    rotZ: { speed: [0.1, 0.15], amp: [0.1, 0.2] }, // Z軸周りの回転アニメーション設定
   };
 
   /* マウント時の数値計算 
@@ -83,21 +90,27 @@ export function KeyCap({ keyCap, onClick }: { keyCap: KeyCapType; onClick: (path
     }
 
     const t = selfTimeRef.current;
-    const initRotX = 0.3;
 
     // 基準の値
     const baseY = Math.sin(t * offsets.ySpeed + offsets.yPhase) * offsets.yAmp;
     const baseRotY = Math.sin(t * offsets.rotYSpeed + offsets.rotYPhase) * offsets.rotYAmp;
     const baseRotZ = Math.sin(t * offsets.rotZSpeed + offsets.rotZPhase) * offsets.rotZAmp;
 
-    // ホバー時はすべて 0、ホバー外は元の挙動
-    const targetRotX = hovered ? 0.3 : initRotX;
-    const targetRotY = hovered ? 0 : baseRotY;
-    const targetRotZ = hovered ? 0 : baseRotZ;
+    const initRotX = 0.3; // 通常時の前傾
+    const hoverBaseRotX = 0.3; // ホバー時の基準ピッチ（少し前傾）
+    const POS_FOLLOW = 0.6;
+    const ROT_FOLLOW = 0.4; 
 
-    // 位置だけマウスに追従
-    const hoverPosX = hovered ? state.pointer.x * 0.3 : 0;
-    const hoverPosY = hovered ? state.pointer.y * 0.3 : 0;
+    // 追従オフセット
+    const hoverPosX = hovered ? state.pointer.x * POS_FOLLOW : 0;
+    const hoverPosY = hovered ? state.pointer.y * POS_FOLLOW : 0;
+    const hoverRotX = hovered ? -state.pointer.y * ROT_FOLLOW : 0;
+    const hoverRotY = hovered ? state.pointer.x * ROT_FOLLOW : 0;
+
+    // 目標値（ホバー時の基準値 + 追従）
+    const targetRotX = hovered ? hoverBaseRotX + hoverRotX : initRotX; // 基準0.3 + 追従
+    const targetRotY = hovered ? 0 + hoverRotY : baseRotY; // 基準0 + 追従
+    const targetRotZ = hovered ? 0 : baseRotZ; // 0固定
 
     // lerp で滑らかに
     const lerpFactor = 0.1;
@@ -116,11 +129,16 @@ export function KeyCap({ keyCap, onClick }: { keyCap: KeyCapType; onClick: (path
       onPointerOver={(e) => {
         setHovered(true);
         e.stopPropagation();
+        onHover(keyCap.label);
       }}
-      onPointerOut={() => setHovered(false)}
+      onPointerOut={() => {
+        setHovered(false);
+        onHover(null)
+      }}
       onClick={(e) => {
         e.stopPropagation();
         handleClick();
+        onHover(null);
       }}
     >
       <mesh geometry={geometry}>

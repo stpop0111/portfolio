@@ -21,7 +21,7 @@ export function HeroText({
               </span>
             ))}
           </h2>
-            <p className='progressText fixed bottom-0 right-0 text-[256px] font-bold tracking-tighter text-zinc-950' style={{ fontFamily: 'var(--font-righteous)' }}>{progressCount}</p>
+            <p className='progressText fixed bottom-0 right-0 leading-64 text-[256px] font-bold -tracking-widest text-zinc-950' style={{ fontFamily: 'var(--font-righteous)' }}>{progressCount}</p>
         </div>
       )}
 
