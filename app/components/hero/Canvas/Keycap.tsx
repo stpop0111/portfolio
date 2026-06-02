@@ -10,37 +10,33 @@ import type { Mesh } from 'three';
 // コンポーネント
 import type { KeyCapType } from './CanvasNavKey/index';
 
-export function KeyCap({ keyCap,onClick }: { 
-  keyCap: KeyCapType;
-  onClick: (path:string) => void
-}) {
+export function KeyCap({ keyCap, onClick }: { keyCap: KeyCapType; onClick: (path: string) => void }) {
   const groupRef = useRef<Group>(null);
   const { nodes } = useGLTF('/models/model__keycap.glb');
   const geometry = (nodes.key as Mesh).geometry;
+  const selfTimeRef = useRef(0);
 
   // ----------------------------------------
   // クリック時
   // ----------------------------------------
   const [clicked, setClicked] = useState<boolean>(false);
-  
+
   const handleClick = () => {
-    if(clicked) return;
+    if (clicked) return;
     setClicked(true);
-    const tl = gsap.timeline()
+    const tl = gsap.timeline();
 
     tl.to(groupRef.current!.position, {
       y: -0.5,
       duration: 0.15,
       ease: 'bounce.out',
-      onComplete: () => onClick(keyCap.path)
-      })
-      .to(groupRef.current!.position, {
+    }).to(groupRef.current!.position, {
       y: 0,
       duration: 0.1,
       ease: 'bounce.in',
-      onComplete: () => onClick(keyCap.path)
-    })
-  }
+      onComplete: () => onClick(keyCap.path),
+    });
+  };
 
   // ----------------------------------------
   // ホバー時
@@ -79,26 +75,53 @@ export function KeyCap({ keyCap,onClick }: {
 
   /* フローティングアニメーション 
   計算式：((経過時間*速度の値)＋初期開始)*波の幅 */
-  useFrame((state) => {
-    if (!groupRef.current || clicked || hovered ) return;
-    const t = state.clock.elapsedTime;
-    groupRef.current.position.y = Math.sin(t * offsets.ySpeed + offsets.yPhase) * offsets.yAmp;
-    groupRef.current.rotation.y = Math.sin(t * offsets.rotYSpeed + offsets.rotYPhase) * offsets.rotYAmp;
-    groupRef.current.rotation.z = Math.sin(t * offsets.rotZSpeed + offsets.rotZPhase) * offsets.rotZAmp;
-  });
 
+  useFrame((state, delta) => {
+    if (!groupRef.current || clicked) return;
+    if (!hovered) {
+      selfTimeRef.current += delta;
+    }
+
+    const t = selfTimeRef.current;
+    const initRotX = 0.3;
+
+    // 基準の値
+    const baseY = Math.sin(t * offsets.ySpeed + offsets.yPhase) * offsets.yAmp;
+    const baseRotY = Math.sin(t * offsets.rotYSpeed + offsets.rotYPhase) * offsets.rotYAmp;
+    const baseRotZ = Math.sin(t * offsets.rotZSpeed + offsets.rotZPhase) * offsets.rotZAmp;
+
+    // ホバー時はすべて 0、ホバー外は元の挙動
+    const targetRotX = hovered ? 0.3 : initRotX;
+    const targetRotY = hovered ? 0 : baseRotY;
+    const targetRotZ = hovered ? 0 : baseRotZ;
+
+    // 位置だけマウスに追従
+    const hoverPosX = hovered ? state.pointer.x * 0.3 : 0;
+    const hoverPosY = hovered ? state.pointer.y * 0.3 : 0;
+
+    // lerp で滑らかに
+    const lerpFactor = 0.1;
+    groupRef.current.position.x += (keyCap.x + hoverPosX - groupRef.current.position.x) * lerpFactor;
+    groupRef.current.position.y += (baseY + hoverPosY - groupRef.current.position.y) * lerpFactor;
+    groupRef.current.rotation.x += (targetRotX - groupRef.current.rotation.x) * lerpFactor;
+    groupRef.current.rotation.y += (targetRotY - groupRef.current.rotation.y) * lerpFactor;
+    groupRef.current.rotation.z += (targetRotZ - groupRef.current.rotation.z) * lerpFactor;
+  });
 
   return (
     <group
       ref={groupRef}
       position={[keyCap.x, 0, 0]}
-      rotation-x={0.6}
+      rotation-x={0.3}
       onPointerOver={(e) => {
         setHovered(true);
         e.stopPropagation();
       }}
       onPointerOut={() => setHovered(false)}
-      onClick={(e) => {e.stopPropagation(); handleClick();}}
+      onClick={(e) => {
+        e.stopPropagation();
+        handleClick();
+      }}
     >
       <mesh geometry={geometry}>
         <MeshTransmissionMaterial
@@ -111,7 +134,7 @@ export function KeyCap({ keyCap,onClick }: {
           chromaticAberration={0.2}
           backside={true}
           color={keyCap.color}
-        /> 
+        />
       </mesh>
       {hovered && (
         <Html position={[0, 1, 0]} center>

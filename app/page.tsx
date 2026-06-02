@@ -9,17 +9,13 @@ import { useGLTF } from '@react-three/drei';
 import { useProgress } from '@react-three/drei';
 // React
 import { useRef, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation';
 // コンポーネントのインポート
 import { Curtains } from './components/hero/Curtains';
 import { ReloadButton } from './components/hero/ReloadButton';
 import { HeroText } from './components/hero/HeroText';
 import { CanvasPC } from './components/hero/Canvas/CanvasPC';
 import { CanvasNavKey } from './components/hero/Canvas/CanvasNavKey';
-
-// 3Dモデルのプリローディング
-useGLTF.preload('/models/model__keycap.glb');
-useGLTF.preload('/models/model__pc.glb');
 
 export default function Home() {
   const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>('loading'); // アニメーションのフェーズ管理
@@ -55,18 +51,25 @@ export default function Home() {
   );
 
   // ----------------------------------------
-  // リロードボタン
+  // 3Dモデルのロードを待つ
   // ----------------------------------------
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false); // リロードボタン出現の管理
+  // 3Dモデルのプリローディング
+  useGLTF.preload('/models/model__keycap.glb');
+  useGLTF.preload('/models/model__pc.glb');
   const { progress, total } = useProgress();
   useEffect(() => {
-    if (progress === 100 && total > 0) {
+    if (phase === 'loading' && progress === 100 && total > 0) {
       const timer = setTimeout(() => {
         setPhase('changing');
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [progress, total]);
+  }, [progress, total, phase]);
+
+  // ----------------------------------------
+  // リロードボタン
+  // ----------------------------------------
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false); // リロードボタン出現の管理
   /* タイムアウト秒数後に変数を更新 */
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -156,16 +159,43 @@ export default function Home() {
         }) // カーテンアップ => アニメーション終了後に状態変数を変更
           .to('.titleBlock', { y: '-30vh', duration: 1.2, ease: 'power2.inOut' }, '>-0.5') // タイトルが上に上がる
           .from(canvasPCRef.current!.position, { y: -2, duration: 1.2, ease: 'power4.inOut' }, '<')
-          .to( '.title', { color: '#262626', duration: 1.2, stagger: { amount: 0.1, from: 'center' }, ease: 'power2.inOut' }, '<', ) // タイトルの色が真ん中から黒色になる
+          .to(
+            '.title',
+            { color: '#262626', duration: 1.2, stagger: { amount: 0.1, from: 'center' }, ease: 'power2.inOut' },
+            '<',
+          ) // タイトルの色が真ん中から黒色になる
           .from(canvasNavKeyRef.current, { y: '+100%', duration: 1.2, ease: 'power2.inOut' }, '<') // タイトルの色が真ん中から黒色になる
           .to('.titleText', { letterSpacing: '0.15em', duration: 1, ease: 'power2.inOut' }, '<') // タイトルの字間が広がる
-          .fromTo( '.gradientOverlay',
+          .fromTo(
+            '.gradientOverlay',
             { opacity: 0, y: '+100%' },
             { opacity: 1, y: 0, duration: 1, ease: 'power2.out' },
             '<',
           ) // グラデーションが下から広がる
-          .to( '.nameFirst', { scale: 1, opacity: 1, filter: 'blur(0px)', duration: 0.3, stagger: { amount: 0.2, from: 'start' }, ease: 'power2.out', }, '>-0.6', ) // 名前が前から表示
-          .to( '.nameLast', { scale: 1, opacity: 1, filter: 'blur(0px)', duration: 0.3, stagger: { amount: 0.2, from: 'end' }, ease: 'power2.out', }, '<', ); // 苗字が後ろから表示
+          .to(
+            '.nameFirst',
+            {
+              scale: 1,
+              opacity: 1,
+              filter: 'blur(0px)',
+              duration: 0.3,
+              stagger: { amount: 0.2, from: 'start' },
+              ease: 'power2.out',
+            },
+            '>-0.6',
+          ) // 名前が前から表示
+          .to(
+            '.nameLast',
+            {
+              scale: 1,
+              opacity: 1,
+              filter: 'blur(0px)',
+              duration: 0.3,
+              stagger: { amount: 0.2, from: 'end' },
+              ease: 'power2.out',
+            },
+            '<',
+          ); // 苗字が後ろから表示
       }
     },
     { dependencies: [phase] },
@@ -185,10 +215,7 @@ export default function Home() {
       {/* PCモデルの配置 */}
       <CanvasPC ref={canvasPCRef} />
 
-      {phase === 'hero' && 
-      <CanvasNavKey ref={canvasNavKeyRef} keyCaps={keyCaps} onKeyCapClick={handleClick} />}
-
-      
+      {phase === 'hero' && <CanvasNavKey ref={canvasNavKeyRef} keyCaps={keyCaps} onKeyCapClick={handleClick} />}
 
       <div className='whiteCurtain fixed inset-0 z-100 bg-zinc-50' style={{ transform: 'translateY(100%)' }} />
       {/* グラデーション背景 */}
