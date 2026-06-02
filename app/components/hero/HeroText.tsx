@@ -14,14 +14,14 @@ export function HeroText({
       {/* ローディング */}
       {(phase === 'loading' || phase === 'changing') && (
         <div className='loadingBlock'>
-          <h2 className='loadingText absolute inset-0 flex items-center justify-center text-5xl'>
+          <h2 className='loadingText absolute inset-0 flex items-center justify-center text-5xl' style={{ fontFamily: 'var(--font-righteous)' }}>
             {'Loading...'.split('').map((char, i) => (
               <span key={i} className='loading'>
                 {char}
               </span>
             ))}
           </h2>
-            <p className='progressText fixed bottom-0 right-0 text-9xl font-bold tracking-tighter text-zinc-950'>{progressCount}</p>
+            <p className='progressText fixed bottom-0 right-0 text-9xl font-bold tracking-tighter text-zinc-950' style={{ fontFamily: 'var(--font-righteous)' }}>{progressCount}</p>
         </div>
       )}
 

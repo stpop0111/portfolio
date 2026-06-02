@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Righteous } from 'next/font/google';
 import './globals.css';
 import LenisWrapper from './components/LenisWrapper';
 
@@ -13,6 +13,12 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+const righteous = Righteous({
+  variable: '--font-righteous',
+  subsets: ['latin'],
+  weight: '400',
+});
+
 export const metadata: Metadata = {
   title: 'seita izaki - Portfolio',
   description: 'about me',
@@ -24,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en' className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang='en' className={`${geistSans.variable} ${geistMono.variable} ${righteous.variable} h-full antialiased`}>
       <body className='min-h-full flex flex-col'>
         <LenisWrapper>{children}</LenisWrapper>
       </body>
