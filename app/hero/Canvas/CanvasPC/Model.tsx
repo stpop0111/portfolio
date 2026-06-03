@@ -42,11 +42,10 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
     textureRef.current = texture;
 
     const monitorMat = new MeshStandardMaterial({
-      color: 0xf0000,
       map: texture,
       emissive: new Color(0xffffff),
       emissiveMap: texture,
-      emissiveIntensity: 1,
+      emissiveIntensity: 3,
       side: DoubleSide,
     });
     screenMatRef.current = monitorMat;
@@ -87,7 +86,7 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       pointerRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
-      pointerRef.current.y = (e.clientY / window.innerHeight) * 2 + 1;
+      pointerRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
@@ -112,6 +111,19 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    /* 現在時刻を取得 */
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const timeStr =
+      `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}` +
+      `:${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+    ctx.font = `bold 40px "DotGothic16", monospace`;
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(timeStr, 100, 120);
+
     if (hoveredKey) {
       const SCROLL_SPEED = 300;
       const SPACING = 200;
@@ -119,8 +131,9 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
 
       /* フォントの書式設定 */
       ctx.font = `bold ${FONT_SIZE}px "DotGothic16", sans-serif`;
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = '#f90';
       ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
 
       /* 一周したらスクロール位置リセット */
       const textWidth = ctx.measureText(hoveredKey).width;
@@ -135,40 +148,65 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
         ctx.fillText(hoveredKey, x, canvas.height / 2);
         x += textWidth + SPACING;
       }
+    } else {
+      ctx.font = `bold 160px "DotGothic16", sans-serif`;
+      ctx.font = `bold 160px "DotGothic16", sans-serif`;
+      ctx.fillStyle = '#fafafa';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('(^o^)/', canvas.width / 2, canvas.height / 2);
+      ctx.font = `bold 80px "DotGothic16", sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
     }
 
     /* スキャンラインの追加 */
     const LINE_SPACING = 8;
     const LINE_HEIGHT = 2;
     ctx.fillStyle = 'rgba(0, 0, 0.3)';
-    for(let y = 0; y < canvas.height; y += LINE_SPACING) {
-      ctx.fillRect(0, y , canvas.width, LINE_HEIGHT)
+    for (let y = 0; y < canvas.height; y += LINE_SPACING) {
+      ctx.fillRect(0, y, canvas.width, LINE_HEIGHT);
     }
 
     /* ノイズピクセル */
     const NOISE_COUNT = 100;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-    for (let i = 0; i < NOISE_COUNT; i++ ) {
+    for (let i = 0; i < NOISE_COUNT; i++) {
       const nx = Math.random() * canvas.width;
       const ny = Math.random() * canvas.height;
       const size = Math.random() * 3 + 1;
-      ctx.fillRect(nx, ny, size, size)
+      ctx.fillRect(nx, ny, size, size);
     }
 
     /* グリッチ */
-    if (Math.random() < 0.05){
+    if (Math.random() < 0.05) {
       const glitchY = Math.floor(Math.random() * canvas.height);
       const glitchHeight = Math.floor(Math.random() * 20 + 5);
-      const glitchOffset = (Math.floor(Math.random() - 0.5) * 50);
-      
+      const glitchOffset = Math.floor(Math.random() - 0.5) * 50;
+
       if (glitchY + glitchHeight < canvas.height) {
         const imageData = ctx.getImageData(0, glitchY, canvas.width, glitchHeight);
         ctx.clearRect(0, glitchY, canvas.width, glitchHeight);
-        ctx.putImageData(imageData, glitchOffset, glitchY)
+        ctx.putImageData(imageData, glitchOffset, glitchY);
       }
     }
 
     textureRef.current.needsUpdate = true;
+
+    /* カメラ追従 */
+    const CAMERA_BASE_X = 3;
+    const CAMERA_BASE_Y = -0.4;
+    const CAMERA_FOLLOW_X = 1.5;
+    const CAMERA_FOLLOW_Y = 0.5;
+    const cameraLerp = 0.05;
+
+    const targetCamX = CAMERA_BASE_X + pointerRef.current.x * CAMERA_FOLLOW_X;
+    const targetCamY = CAMERA_BASE_Y + pointerRef.current.y * CAMERA_FOLLOW_Y;
+
+    state.camera.position.x += (targetCamX - state.camera.position.x) * cameraLerp;
+    state.camera.position.y += (targetCamY - state.camera.position.y) * cameraLerp;
+
+    state.camera.lookAt(0, 0.6, 0);
   });
 
   return (

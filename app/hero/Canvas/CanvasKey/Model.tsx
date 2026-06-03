@@ -157,14 +157,9 @@ export function KeyCap({
       {hovered && (
         <Html position={[0, 1, 0]} center>
           <div
-            style={{ background: keyCap.color, color: keyCap.textColor }}
-            className='relative rounded-full shadow whitespace-nowrap px-3 py-1 text-xl'
+            className='text-zinc-950 relative rounded-full whitespace-nowrap text-4xl font-instrument-serif italic'
           >
             {keyCap.label}
-            <div
-              style={{ background: keyCap.color }}
-              className='absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45'
-            />
           </div>
         </Html>
       )}

@@ -24,35 +24,6 @@ export function HeroText({
             <p className='progressText fixed bottom-0 right-0 leading-64 text-[256px] font-bold -tracking-widest text-zinc-950 font-righteous'>{progressCount}</p>
         </div>
       )}
-
-      {/* タイトル */}
-      {phase !== 'loading' && (
-        <div className='titleBlock'>
-          <h2 className='titleText text-9xl relative flex'>
-            {'Portfolio'.split('').map((char, i) => (
-              <span key={i} className='title opacity-0 blur-[20px]'>
-                {char}
-              </span>
-            ))}
-          </h2>
-          <div className='nameBlock absolute inset-0 text-4xl text-amber-600 font-bold font-urbanist'>
-            <span className='absolute -top-7 left-2'>
-              {'SEITA'.split('').map((char, i) => (
-                <span key={i} className='nameFirst opacity-0 blur-[10px] scale-120'>
-                  {char}
-                </span>
-              ))}
-            </span>
-            <span className='absolute -bottom-7 right-2'>
-              {'IZAKI'.split('').map((char, i) => (
-                <span key={i} className='nameLast opacity-0 blur-[10px] scale-120'>
-                  {char}
-                </span>
-              ))}
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

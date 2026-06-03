@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Righteous, Urbanist, DotGothic16 } from 'next/font/google';
+import { Geist, Geist_Mono, Righteous, Urbanist, DotGothic16, Instrument_Serif } from 'next/font/google';
 import './globals.css';
 import LenisWrapper from './components/LenisWrapper';
 
@@ -36,13 +36,20 @@ export const dotgothic16 = DotGothic16({
   variable: "--font-dotgothic16",
 });
 
+const instrumentSerif = Instrument_Serif({
+  variable: '--font-instrument-serif',
+  subsets: ['latin'],
+  weight: '400',
+  style: ['normal', 'italic'],   // ← italic も使うなら（Google Fonts URL の ital@0;1 と同じ）
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en' className={`${geistSans.variable} ${geistMono.variable} ${righteous.variable} ${urbanist.variable} ${dotgothic16.variable} h-full antialiased`}>
+    <html lang='en' className={` ${geistSans.variable} ${geistMono.variable} ${righteous.variable} ${urbanist.variable} ${dotgothic16.variable} ${instrumentSerif.variable} h-full antialiased`}>
       <body className='min-h-full flex flex-col'>
         <LenisWrapper>{children}</LenisWrapper>
       </body>

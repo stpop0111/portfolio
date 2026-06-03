@@ -16,6 +16,7 @@ import { ReloadButton } from './hero/ReloadButton';
 import { HeroText } from './hero/HeroText';
 import { CanvasPC } from './hero/Canvas/CanvasPC';
 import { CanvasNavKey } from './hero/Canvas/CanvasKey';
+import { CanvasTitle } from './hero/Canvas/CanvasTitle';
 
 export default function Home() {
   const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>('loading'); // アニメーションのフェーズ管理
@@ -33,7 +34,7 @@ export default function Home() {
   // ----------------------------------------
   const router = useRouter();
   const [transitionTo, setTransitionTo] = useState<string | null>(null);
-    const handleClick = (path: string) => { setTransitionTo(path); };
+  const handleClick = (path: string) => { setTransitionTo(path); };
 
   useGSAP( () => {
       if (transitionTo) {
@@ -92,7 +93,6 @@ export default function Home() {
         const tl = gsap.timeline({ onComplete: () => setPhase('title') });
         tl.to('.loading', { opacity: 0, filter: 'blur(20px)', duration: 0.8, stagger: { amount: 0.5, from: 'center' }, ease: 'power2.in', })
           .to( '.progressText', { y: '100%', duration: 0.8, ease: 'bounce.out', }, '<', )
-          .to( '.title', { opacity: 1, filter: 'blur(0px)', duration: 0.8, stagger: { amount: 0.5, from: 'random' }, ease: 'power2.out', }, '-=0.3', );
         }
     },
     { dependencies: [phase] },
@@ -103,7 +103,9 @@ export default function Home() {
   // ----------------------------------------
   const canvasPCRef = useRef<Group>(null);
   const canvasNavKeyRef = useRef<HTMLDivElement>(null);
+  const canvasTitleRef = useRef<HTMLDivElement>(null);
   const [showCurtain, setShowCurtain] = useState<boolean>(true);
+
   /* title -> hero : タイトル画面に遷移してから*/
   useEffect(() => {
     if (phase === 'title') {
@@ -116,14 +118,10 @@ export default function Home() {
       if (phase === 'hero') {
         const tl = gsap.timeline();
         tl.to('.curtain', { y: '-100%', duration: 0.5, stagger: 0.08, ease: 'power2.inOut', onComplete: () => setShowCurtain(false), }) // カーテンアップ => アニメーション終了後に状態変数を変更
-          .to('.titleBlock', { y: '-35vh', duration: 1.2, ease: 'power2.inOut' }, '>-0.5') // タイトルが上に上がる
           .from(canvasPCRef.current!.position, { y: -2, duration: 1.2, ease: 'power4.inOut' }, '<')
-          .to( '.title', { color: '#262626', duration: 1.2, stagger: { amount: 0.1, from: 'center' }, ease: 'power2.inOut' }, '<', ) // タイトルの色が真ん中から黒色になる
-          .from(canvasNavKeyRef.current, { y: '+100%', duration: 1.2, ease: 'power2.inOut' }, '<') // タイトルの色が真ん中から黒色になる
-          .to('.titleText', { letterSpacing: '0.15em', duration: 1, ease: 'power2.inOut' }, '<') // タイトルの字間が広がる
+          .from(canvasNavKeyRef.current, { y: '+100%', duration: 1.2, ease: 'power2.inOut' }, '<')
+          .to(canvasTitleRef.current, { y: '-130%', duration: 1.2, ease: 'power2.inOut' }, '<')
           .fromTo( '.gradientOverlay', { opacity: 0, y: '+100%' }, { opacity: 1, y: 0, duration: 1, ease: 'power2.out' }, '<', ) // グラデーションが下から広がる
-          .to( '.nameFirst', { scale: 1, opacity: 1, filter: 'blur(0px)', duration: 0.3, stagger: { amount: 0.2, from: 'start' }, ease: 'power2.out', }, '>-0.6', ) // 名前が前から表示
-          .to( '.nameLast', { scale: 1, opacity: 1, filter: 'blur(0px)', duration: 0.3, stagger: { amount: 0.2, from: 'end' }, ease: 'power2.out', }, '<', ); // 苗字が後ろから表示
       }
     },
     { dependencies: [phase] },
@@ -152,6 +150,7 @@ export default function Home() {
 
       {/* タイトルテキスト */}
       <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} />
+      <CanvasTitle ref={canvasTitleRef} phase={phase} />
 
       {/* ページリロードボタン */}
       {isRefreshing && phase === 'loading' && (
