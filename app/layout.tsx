@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Righteous, Urbanist } from 'next/font/google';
+import { Geist, Geist_Mono, Righteous, Urbanist, DotGothic16 } from 'next/font/google';
 import './globals.css';
 import LenisWrapper from './components/LenisWrapper';
 
@@ -30,13 +30,19 @@ export const metadata: Metadata = {
   description: 'about me',
 };
 
+export const dotgothic16 = DotGothic16({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-dotgothic16",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en' className={`${geistSans.variable} ${geistMono.variable} ${righteous.variable} ${urbanist.variable} h-full antialiased`}>
+    <html lang='en' className={`${geistSans.variable} ${geistMono.variable} ${righteous.variable} ${urbanist.variable} ${dotgothic16.variable} h-full antialiased`}>
       <body className='min-h-full flex flex-col'>
         <LenisWrapper>{children}</LenisWrapper>
       </body>
