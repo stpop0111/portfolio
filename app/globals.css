@@ -12,6 +12,7 @@
   --font-mono: var(--font-geist-mono);
   --font-righteous: var(--font-righteous);
   --font-urbanist: var(--font-urbanist);
+  --font-dotgothic16 : var(--font-dotgothic16)
 }
 
 @media (prefers-color-scheme: dark) {
