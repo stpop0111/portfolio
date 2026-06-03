@@ -118,7 +118,7 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
       const FONT_SIZE = 300;
 
       /* フォントの書式設定 */
-      ctx.font = `bold ${FONT_SIZE}px "Urbanist", sans-serif`;
+      ctx.font = `bold ${FONT_SIZE}px "DotGothic16", sans-serif`;
       ctx.fillStyle = '#fff';
       ctx.textBaseline = 'middle';
 
