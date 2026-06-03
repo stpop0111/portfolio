@@ -21,7 +21,7 @@ export function HeroText({
               </span>
             ))}
           </h2>
-            <p className='progressText fixed bottom-0 right-0 leading-64 text-[256px] font-bold -tracking-widest text-zinc-950' style={{ fontFamily: 'var(--font-righteous)' }}>{progressCount}</p>
+            <p className='progressText fixed bottom-0 right-0 leading-64 text-[256px] font-bold -tracking-widest text-zinc-950 font-righteous'>{progressCount}</p>
         </div>
       )}
 
@@ -35,7 +35,7 @@ export function HeroText({
               </span>
             ))}
           </h2>
-          <div className='nameBlock absolute inset-0 text-4xl text-amber-600'>
+          <div className='nameBlock absolute inset-0 text-4xl text-amber-600 font-bold font-urbanist'>
             <span className='absolute -top-7 left-2'>
               {'SEITA'.split('').map((char, i) => (
                 <span key={i} className='nameFirst opacity-0 blur-[10px] scale-120'>

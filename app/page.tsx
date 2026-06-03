@@ -11,11 +11,11 @@ import { useProgress } from '@react-three/drei';
 import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 // コンポーネントのインポート
-import { Curtains } from './components/hero/Curtains';
-import { ReloadButton } from './components/hero/ReloadButton';
-import { HeroText } from './components/hero/HeroText';
-import { CanvasPC } from './components/hero/Canvas/CanvasPC';
-import { CanvasNavKey } from './components/hero/Canvas/CanvasKey';
+import { Curtains } from './hero/Curtains';
+import { ReloadButton } from './hero/ReloadButton';
+import { HeroText } from './hero/HeroText';
+import { CanvasPC } from './hero/Canvas/CanvasPC';
+import { CanvasNavKey } from './hero/Canvas/CanvasKey';
 
 export default function Home() {
   const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>('loading'); // アニメーションのフェーズ管理

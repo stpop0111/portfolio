@@ -6,8 +6,17 @@ import { useFrame } from '@react-three/fiber';
 import { CanvasTexture, Color, DoubleSide, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 
 export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group | null>; hoveredKey: string | null }) {
+  /* パソコン3Dモデル */
   const { scene, nodes } = useGLTF('/models/model__pc.glb');
   const monitorRef = useRef<Group | null>(null);
+
+  useEffect(() => {
+    const monitor = nodes.monitor as Group;
+    if (monitor) {
+      monitorRef.current = monitor;
+      monitor.rotation.set(0, Math.PI / 4, 0);
+    }
+  }, [nodes]);
 
   /* 液晶表示用 */
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -19,10 +28,9 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
   // ----------------------------------------
 
   useEffect(() => {
-    // ============ canvas + texture + マテリアル準備 ============
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
-    canvas.height = Math.floor(1024 * (2.49 / 2.92)); // ≒ 873
+    canvas.height = Math.floor(1024 * (2.49 / 2.92));
     canvasRef.current = canvas;
 
     const ctx = canvas.getContext('2d')!;
@@ -42,30 +50,21 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
       side: DoubleSide,
     });
     screenMatRef.current = monitorMat;
-
-    // ============ scene から mesh__monitor_1 を探す ============
     let monitorScreen: Mesh | null = null;
-
     scene.traverse((obj) => {
       if (obj instanceof Mesh && obj.name === 'mesh__monitor_1') {
         monitorScreen = obj;
       }
     });
 
-    console.log('monitorScreen found:', monitorScreen);
-
-    // ============ 全 mesh を処理 ============
     scene.traverse((obj) => {
       if (obj instanceof Mesh) {
         obj.castShadow = true;
         obj.receiveShadow = true;
 
         if (obj === monitorScreen) {
-          // 液晶
           obj.material = monitorMat;
         } else if (obj.material) {
-          // PC 本体
-
           const oldMat = obj.material as MeshStandardMaterial;
           obj.material = new MeshPhysicalMaterial({
             color: oldMat.color,
@@ -80,48 +79,65 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
     });
   }, [scene]);
 
-  // hoveredKey が変わったら描画更新
-  useEffect(() => {
-    if (!canvasRef.current || !textureRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d')!;
-
-    // 背景クリア
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    if (hoveredKey) {
-      // テキスト描画（中央）
-      const fontSize = Math.min(320, (canvas.width / hoveredKey.length) * 1);
-      ctx.font = `bold ${fontSize}px sans-serif`;
-      ctx.fillStyle = '#fff';
-      ctx.textBaseline = 'middle';
-      ctx.textAlign = 'center';
-      ctx.fillText(hoveredKey, canvas.width / 2, canvas.height / 2);
-    }
-
-    textureRef.current.needsUpdate = true;
-  }, [hoveredKey]);
-
   // ----------------------------------------
-  // マウスカーソルへの追従
+  // アニメーション
   // ----------------------------------------
-  useEffect(() => {
-    const monitor = nodes.monitor as Group;
-    if (monitor) {
-      monitorRef.current = monitor;
-      monitor.rotation.set(0, Math.PI / 4, 0);
-    }
-  }, [nodes]);
+  const pointerRef = useRef({ x: 0, y: 0 });
 
-  useFrame((state) => {
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      pointerRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointerRef.current.y = (e.clientY / window.innerHeight) * 2 + 1;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  const scrollXRef = useRef(0);
+  useFrame((state, delta) => {
+    /* モニターの首振り */
     if (!monitorRef.current) return;
     const ROT_BASE_Y = Math.PI / 4;
     const ROT_FOLLOW_Y = Math.PI / 4;
     const lerpFactor = 0.1;
-    const targetRotY = ROT_BASE_Y + state.pointer.x * ROT_FOLLOW_Y;
+    const targetRotY = ROT_BASE_Y + pointerRef.current.x * ROT_FOLLOW_Y;
+
     monitorRef.current.rotation.y += (targetRotY - monitorRef.current.rotation.y) * lerpFactor;
+
+    /* モニターの表示 */
+    if (!canvasRef.current || !textureRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d')!;
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (hoveredKey) {
+      const SCROLL_SPEED = 300;
+      const SPACING = 200;
+      const FONT_SIZE = 300;
+
+      /* フォントの書式設定 */
+      ctx.font = `bold ${FONT_SIZE}px "Urbanist", sans-serif`;
+      ctx.fillStyle = '#fff';
+      ctx.textBaseline = 'middle';
+
+      /* 一周したらスクロール位置リセット */
+      const textWidth = ctx.measureText(hoveredKey).width;
+      scrollXRef.current -= delta * SCROLL_SPEED;
+      if (scrollXRef.current < -(textWidth + SPACING)) {
+        scrollXRef.current = 0;
+      }
+
+      /* 画面いっぱいに繰り返秒後 */
+      let x = scrollXRef.current;
+      while (x < canvas.width) {
+        ctx.fillText(hoveredKey, x, canvas.height / 2);
+        x += textWidth + SPACING;
+      }
+    }
+
+    textureRef.current.needsUpdate = true;
   });
 
   return (

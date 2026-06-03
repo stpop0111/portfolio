@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Righteous } from 'next/font/google';
+import { Geist, Geist_Mono, Righteous, Urbanist } from 'next/font/google';
 import './globals.css';
 import LenisWrapper from './components/LenisWrapper';
 
@@ -19,6 +19,12 @@ const righteous = Righteous({
   weight: '400',
 });
 
+const urbanist = Urbanist({
+  variable: '--font-urbanist',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+})
+
 export const metadata: Metadata = {
   title: 'seita izaki - Portfolio',
   description: 'about me',
@@ -30,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en' className={`${geistSans.variable} ${geistMono.variable} ${righteous.variable} h-full antialiased`}>
+    <html lang='en' className={`${geistSans.variable} ${geistMono.variable} ${righteous.variable} ${urbanist.variable} h-full antialiased`}>
       <body className='min-h-full flex flex-col'>
         <LenisWrapper>{children}</LenisWrapper>
       </body>
