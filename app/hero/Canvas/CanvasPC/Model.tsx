@@ -137,6 +137,37 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
       }
     }
 
+    /* スキャンラインの追加 */
+    const LINE_SPACING = 8;
+    const LINE_HEIGHT = 2;
+    ctx.fillStyle = 'rgba(0, 0, 0.3)';
+    for(let y = 0; y < canvas.height; y += LINE_SPACING) {
+      ctx.fillRect(0, y , canvas.width, LINE_HEIGHT)
+    }
+
+    /* ノイズピクセル */
+    const NOISE_COUNT = 100;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    for (let i = 0; i < NOISE_COUNT; i++ ) {
+      const nx = Math.random() * canvas.width;
+      const ny = Math.random() * canvas.height;
+      const size = Math.random() * 3 + 1;
+      ctx.fillRect(nx, ny, size, size)
+    }
+
+    /* グリッチ */
+    if (Math.random() < 0.05){
+      const glitchY = Math.floor(Math.random() * canvas.height);
+      const glitchHeight = Math.floor(Math.random() * 20 + 5);
+      const glitchOffset = (Math.floor(Math.random() - 0.5) * 50);
+      
+      if (glitchY + glitchHeight < canvas.height) {
+        const imageData = ctx.getImageData(0, glitchY, canvas.width, glitchHeight);
+        ctx.clearRect(0, glitchY, canvas.width, glitchHeight);
+        ctx.putImageData(imageData, glitchOffset, glitchY)
+      }
+    }
+
     textureRef.current.needsUpdate = true;
   });
 
