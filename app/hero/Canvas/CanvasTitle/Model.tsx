@@ -1,15 +1,14 @@
 'use client';
 
 import { useFrame } from '@react-three/fiber';
-import { MeshTransmissionMaterial, Text, useGLTF } from '@react-three/drei';
+import { Text, useGLTF } from '@react-three/drei';
 import { useMemo, useRef } from 'react';
-import { Color, DoubleSide, MeshStandardMaterial, type Group, type Mesh } from 'three';
+import { DoubleSide, MeshStandardMaterial, type Group, type Mesh } from 'three';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
 export function TitleScene({ phase }: { phase: string }) {
   const { nodes } = useGLTF('/models/model__letter-y.glb');
-  const transmissionBackground = useMemo(() => new Color('#fafafa'), []);
   const geometry = useMemo(() => {
     const source = (nodes.Curve as Mesh).geometry;
     const cloned = source.clone();
@@ -80,26 +79,15 @@ export function TitleScene({ phase }: { phase: string }) {
           Port
         </Text>
         <mesh ref={fRef} geometry={geometry} position={[0, 0, 0]} scale={0}>
-          <MeshTransmissionMaterial
-            samples={12}
-            resolution={1024}
-            transmission={1}
-            roughness={0}
-            metalness={0}
-            thickness={1.8}
-            ior={1.8}
-            chromaticAberration={0.18}
-            anisotropy={0}
-            distortion={0}
-            distortionScale={0}
-            temporalDistortion={0}
-            background={transmissionBackground}
-            side={DoubleSide}
-            backside={true}
-            color='#ffffff'
+          <meshPhysicalMaterial
+            metalness={1}
+            roughness={0.05}
+            color='#b8c4d4'
             iridescence={1}
-            iridescenceIOR={1.3}
-            iridescenceThicknessRange={[100, 400]}
+            iridescenceIOR={1.5}
+            iridescenceThicknessRange={[150, 500]}
+            side={DoubleSide}
+            envMapIntensity={2}
           />
         </mesh>
         <Text
