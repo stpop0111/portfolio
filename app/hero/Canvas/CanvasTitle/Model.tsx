@@ -80,9 +80,11 @@ export function TitleScene({ phase }: { phase: string }) {
         </Text>
         <mesh ref={fRef} geometry={geometry} position={[0, 0, 0]} scale={0}>
           <meshPhysicalMaterial
-            metalness={1}
-            roughness={0.05}
+            metalness={0.9}
+            roughness={0.1}
             color='#b8c4d4'
+            emissive='#1a2030'
+            emissiveIntensity={0.3}
             iridescence={1}
             iridescenceIOR={1.5}
             iridescenceThicknessRange={[150, 500]}
