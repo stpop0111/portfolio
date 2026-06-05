@@ -8,11 +8,11 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
 export function TitleScene({ phase }: { phase: string }) {
-  const { nodes } = useGLTF('/models/model__letter-y.glb');
+  const { nodes } = useGLTF('/models/model__letter-f.glb');
   const transmissionBackground = useMemo(() => new Color('#fafafa'), []);
 
   const geometry = useMemo(() => {
-    const source = (nodes.Curve as Mesh).geometry;
+    const source = (nodes.letter_f as Mesh).geometry;
     const cloned = source.clone();
     cloned.computeVertexNormals();
     return cloned;
