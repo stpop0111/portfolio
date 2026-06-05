@@ -69,7 +69,7 @@ export function TitleScene({ phase }: { phase: string }) {
         <Text
           ref={portRef}
           font='/fonts/Urbanist-MediumItalic.ttf'
-          position={[-0.2, 0, -0.5]}
+          position={[-0.05, 0, -0.5]}
           fontSize={1.6}
           color='#fafafa'
           anchorX='right'
@@ -101,7 +101,7 @@ export function TitleScene({ phase }: { phase: string }) {
         <Text
           ref={olioRef}
           font='/fonts/Urbanist-MediumItalic.ttf'
-          position={[0.2, 0, -0.5]}
+          position={[0.05, 0, -0.5]}
           fontSize={1.6}
           color='#fafafa'
           anchorX='left'
