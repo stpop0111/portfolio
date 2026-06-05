@@ -87,8 +87,8 @@ export function TitleScene({ phase }: { phase: string }) {
             roughness={0}
             metalness={0}
             thickness={1.8}
-            ior={1.5}
-            chromaticAberration={0.08}
+            ior={1.8}
+            chromaticAberration={0.18}
             anisotropy={0}
             distortion={0}
             distortionScale={0}
@@ -97,6 +97,9 @@ export function TitleScene({ phase }: { phase: string }) {
             side={DoubleSide}
             backside={true}
             color='#ffffff'
+            iridescence={1}
+            iridescenceIOR={1.3}
+            iridescenceThicknessRange={[100, 400]}
           />
         </mesh>
         <Text
