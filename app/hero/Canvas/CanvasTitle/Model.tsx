@@ -10,33 +10,32 @@ import { useGSAP } from '@gsap/react';
 export function TitleScene({ phase }: { phase: string }) {
   const { nodes } = useGLTF('/models/model__letter-f.glb');
   const transmissionBackground = useMemo(() => new Color('#fafafa'), []);
-
   const geometry = useMemo(() => {
     const source = (nodes.letter_f as Mesh).geometry;
     const cloned = source.clone();
     cloned.computeVertexNormals();
     return cloned;
   }, [nodes]);
-
   const groupRef = useRef<Group>(null);
-  const fRef = useRef<Mesh>(null);
-  const portRef = useRef<Mesh>(null);
-  const olioRef = useRef<Mesh>(null);
+  const text3DRef = useRef<Mesh>(null);
+  const textFrontRef = useRef<Mesh>(null);
+  const textBackRef = useRef<Mesh>(null);
   const selfTimeRef = useRef(0);
+
 
   useGSAP(() => {
   if (phase === 'title') {
     const tl = gsap.timeline();
-    tl.to(portRef.current!.material, { opacity: 1, duration: 1.4, ease: 'power2.out' })
-      .to(olioRef.current!.material, { opacity: 1, duration: 1.4, ease: 'power2.out' }, '<')
-      .to(fRef.current!.scale, { x: 2, y: 2, z: 2, duration: 1.4, ease: 'back.out(2)' }, '<');
+    tl.to(textFrontRef.current!.material, { opacity: 1, duration: 1.4, ease: 'power2.out' })
+      .to(textBackRef.current!.material, { opacity: 1, duration: 1.4, ease: 'power2.out' }, '<')
+      .to(text3DRef.current!.scale, { x: 2, y: 2, z: 2, duration: 1.4, ease: 'back.out(2)' }, '<');
   }
   if (phase === 'hero') {
     const tl = gsap.timeline();
-    tl.to((portRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<')
-      .to((olioRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<');
+    tl.to((textFrontRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<')
+      .to((textBackRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<');
   }
-  }, { dependencies: [phase] });
+}, { dependencies: [phase] });
 
   const float = {
     yPhase: 1.2,
@@ -54,13 +53,13 @@ export function TitleScene({ phase }: { phase: string }) {
     selfTimeRef.current += delta;
     const t = selfTimeRef.current;
 
-    if (fRef.current) {
+    if (text3DRef.current) {
       const y = Math.sin(t * float.ySpeed + float.yPhase) * float.yAmp;
       const rotY = Math.sin(t * float.rotYSpeed + float.rotYPhase) * float.rotYAmp;
       const rotZ = Math.sin(t * float.rotZSpeed + float.rotZPhase) * float.rotZAmp;
-      fRef.current.position.y = y;
-      fRef.current.rotation.y = rotY;
-      fRef.current.rotation.z = rotZ;
+      text3DRef.current.position.y = y;
+      text3DRef.current.rotation.y = rotY;
+      text3DRef.current.rotation.z = rotZ;
     }
   });
 
@@ -68,9 +67,9 @@ export function TitleScene({ phase }: { phase: string }) {
     <>
       <group ref={groupRef}>
         <Text
-          ref={portRef}
+          ref={textFrontRef}
           font='/fonts/Urbanist-MediumItalic.ttf'
-          position={[-0.05, 0, -0.5]}
+          position={[-0.2, 0, -0.5]}
           fontSize={1.6}
           color='#fafafa'
           anchorX='right'
@@ -80,29 +79,30 @@ export function TitleScene({ phase }: { phase: string }) {
         >
           Port
         </Text>
-        <mesh ref={fRef} geometry={geometry} position={[0, 0, 0]} scale={0}>
+        <mesh ref={text3DRef} geometry={geometry} position={[0, 0, 0]} scale={0}>
           <MeshTransmissionMaterial
             samples={12}
             resolution={1024}
             transmission={1}
-            metalness={0}
             roughness={0}
-            thickness={0.5}
-            ior={2.0}
-            chromaticAberration={0.6}
-            backside={true}
+            metalness={0}
+            thickness={1.8}
+            ior={1.5}
+            chromaticAberration={0.08}
+            anisotropy={0}
+            distortion={0}
+            distortionScale={0}
+            temporalDistortion={0}
             background={transmissionBackground}
             side={DoubleSide}
+            backside={true}
             color='#ffffff'
-            iridescence={1}
-            iridescenceIOR={1.33}
-            iridescenceThicknessRange={[100, 800]}
           />
         </mesh>
         <Text
-          ref={olioRef}
+          ref={textBackRef}
           font='/fonts/Urbanist-MediumItalic.ttf'
-          position={[0.05, 0, -0.5]}
+          position={[0.2, 0, -0.5]}
           fontSize={1.6}
           color='#fafafa'
           anchorX='left'
