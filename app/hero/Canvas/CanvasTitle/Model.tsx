@@ -1,27 +1,38 @@
 'use client';
 
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { MeshTransmissionMaterial, Text, useGLTF } from '@react-three/drei';
 import { useMemo, useRef } from 'react';
-import { Color, DoubleSide, MeshStandardMaterial, type Group, type Mesh } from 'three';
+import { Color, DoubleSide, MeshStandardMaterial, Vector3, type Group, type Mesh } from 'three';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
 export function TitleScene({ phase }: { phase: string }) {
   const { nodes } = useGLTF('/models/model__letter-y.glb');
   const transmissionBackground = useMemo(() => new Color('#fafafa'), []);
+  const { viewport } = useThree();
+
   const geometry = useMemo(() => {
     const source = (nodes.Curve as Mesh).geometry;
     const cloned = source.clone();
     cloned.computeVertexNormals();
     return cloned;
   }, [nodes]);
+
+  const maxDisplacement = useMemo(() => {
+    geometry.computeBoundingBox();
+    const size = new Vector3();
+    geometry.boundingBox!.getSize(size);
+    return Math.max(size.x, size.y) * 2 * 0.1;
+  }, [geometry]);
+
   const groupRef = useRef<Group>(null);
   const fRef = useRef<Mesh>(null);
   const portRef = useRef<Mesh>(null);
   const olioRef = useRef<Mesh>(null);
   const selfTimeRef = useRef(0);
-
+  const targetOffset = useRef({ x: 0, y: 0 });
+  const cursorOffset = useRef({ x: 0, y: 0 });
 
   useGSAP(() => {
   if (phase === 'title') {
@@ -35,7 +46,7 @@ export function TitleScene({ phase }: { phase: string }) {
     tl.to((portRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<')
       .to((olioRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<');
   }
-}, { dependencies: [phase] });
+  }, { dependencies: [phase] });
 
   const float = {
     yPhase: 1.2,
@@ -49,15 +60,31 @@ export function TitleScene({ phase }: { phase: string }) {
     rotZAmp: 0.09,
   };
 
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
+    const worldX = e.pointer.x * viewport.width / 2;
+    const worldY = e.pointer.y * viewport.height / 2;
+    const clamp = (v: number) => Math.max(-maxDisplacement, Math.min(maxDisplacement, v));
+    targetOffset.current = { x: clamp(worldX), y: clamp(worldY) };
+  };
+
+  const handlePointerLeave = () => {
+    targetOffset.current = { x: 0, y: 0 };
+  };
+
   useFrame((_, delta) => {
     selfTimeRef.current += delta;
     const t = selfTimeRef.current;
 
     if (fRef.current) {
-      const y = Math.sin(t * float.ySpeed + float.yPhase) * float.yAmp;
+      const floatY = Math.sin(t * float.ySpeed + float.yPhase) * float.yAmp;
       const rotY = Math.sin(t * float.rotYSpeed + float.rotYPhase) * float.rotYAmp;
       const rotZ = Math.sin(t * float.rotZSpeed + float.rotZPhase) * float.rotZAmp;
-      fRef.current.position.y = y;
+
+      cursorOffset.current.x += (targetOffset.current.x - cursorOffset.current.x) * 0.08;
+      cursorOffset.current.y += (targetOffset.current.y - cursorOffset.current.y) * 0.08;
+
+      fRef.current.position.x = cursorOffset.current.x;
+      fRef.current.position.y = floatY + cursorOffset.current.y;
       fRef.current.rotation.y = rotY;
       fRef.current.rotation.z = rotZ;
     }
@@ -79,16 +106,23 @@ export function TitleScene({ phase }: { phase: string }) {
         >
           Port
         </Text>
-        <mesh ref={fRef} geometry={geometry} position={[0, 0, 0]} scale={0}>
+        <mesh
+          ref={fRef}
+          geometry={geometry}
+          position={[0, 0, 0]}
+          scale={0}
+          onPointerMove={handlePointerMove}
+          onPointerLeave={handlePointerLeave}
+        >
           <MeshTransmissionMaterial
             samples={12}
             resolution={1024}
             transmission={1}
             metalness={0}
             roughness={0}
-            thickness={0.3}
-            ior={1.5}
-            chromaticAberration={0.1}
+            thickness={0.5}
+            ior={2.0}
+            chromaticAberration={0.35}
             backside={true}
             background={transmissionBackground}
             side={DoubleSide}
