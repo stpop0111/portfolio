@@ -1,31 +1,28 @@
 'use client';
 
 import { useFrame } from '@react-three/fiber';
-import { Text, useGLTF } from '@react-three/drei';
+import { MeshTransmissionMaterial, Text, useGLTF } from '@react-three/drei';
 import { useMemo, useRef } from 'react';
-import { DoubleSide, MeshStandardMaterial, type Group, type Mesh } from 'three';
+import { Color, DoubleSide, MeshStandardMaterial, type Group, type Mesh } from 'three';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
 export function TitleScene({ phase }: { phase: string }) {
-<<<<<<< HEAD
-  const { nodes } = useGLTF('/models/model__letter-f.glb');
-  const transmissionBackground = useMemo(() => new Color('#fafafa'), []);
-=======
   const { nodes } = useGLTF('/models/model__letter-y.glb');
->>>>>>> a92c5549c354f4afa443670f88ef4b72a6df5e67
+  const transmissionBackground = useMemo(() => new Color('#fafafa'), []);
+
   const geometry = useMemo(() => {
-    const source = (nodes.letter_f as Mesh).geometry;
+    const source = (nodes.Curve as Mesh).geometry;
     const cloned = source.clone();
     cloned.computeVertexNormals();
     return cloned;
   }, [nodes]);
+
   const groupRef = useRef<Group>(null);
   const fRef = useRef<Mesh>(null);
   const portRef = useRef<Mesh>(null);
   const olioRef = useRef<Mesh>(null);
   const selfTimeRef = useRef(0);
-
 
   useGSAP(() => {
   if (phase === 'title') {
@@ -39,7 +36,7 @@ export function TitleScene({ phase }: { phase: string }) {
     tl.to((portRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<')
       .to((olioRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<');
   }
-}, { dependencies: [phase] });
+  }, { dependencies: [phase] });
 
   const float = {
     yPhase: 1.2,
@@ -73,7 +70,7 @@ export function TitleScene({ phase }: { phase: string }) {
         <Text
           ref={portRef}
           font='/fonts/Urbanist-MediumItalic.ttf'
-          position={[-0.2, 0, -0.5]}
+          position={[-0.05, 0, -0.5]}
           fontSize={1.6}
           color='#fafafa'
           anchorX='right'
@@ -84,40 +81,28 @@ export function TitleScene({ phase }: { phase: string }) {
           Port
         </Text>
         <mesh ref={fRef} geometry={geometry} position={[0, 0, 0]} scale={0}>
-<<<<<<< HEAD
           <MeshTransmissionMaterial
-            samples={6}
-            resolution={512}
+            samples={12}
+            resolution={1024}
             transmission={1}
-            roughness={0}
             metalness={0}
-            thickness={1.8}
-            ior={1.5}
-            chromaticAberration={0.08}
-            anisotropy={0}
-            distortion={0}
-            distortionScale={0}
-            temporalDistortion={0}
+            roughness={0}
+            thickness={0.5}
+            ior={2.0}
+            chromaticAberration={0.6}
+            backside={true}
             background={transmissionBackground}
-=======
-          <meshPhysicalMaterial
-            metalness={0.9}
-            roughness={0.1}
-            color='#b8c4d4'
-            emissive='#1a2030'
-            emissiveIntensity={0.3}
-            iridescence={1}
-            iridescenceIOR={1.5}
-            iridescenceThicknessRange={[150, 500]}
->>>>>>> a92c5549c354f4afa443670f88ef4b72a6df5e67
             side={DoubleSide}
-            envMapIntensity={2}
+            color='#ffffff'
+            iridescence={1}
+            iridescenceIOR={1.33}
+            iridescenceThicknessRange={[100, 800]}
           />
         </mesh>
         <Text
           ref={olioRef}
           font='/fonts/Urbanist-MediumItalic.ttf'
-          position={[0.2, 0, -0.5]}
+          position={[0.05, 0, -0.5]}
           fontSize={1.6}
           color='#fafafa'
           anchorX='left'
