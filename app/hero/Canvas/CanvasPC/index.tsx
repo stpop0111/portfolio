@@ -26,7 +26,6 @@ export function CanvasPC({
         {/* 環境光（控えめに） */}
         <Environment preset='studio' environmentIntensity={0.2} />
 
-
         {/* メインライト（影あり） */}
         <directionalLight
           position={[0, 8, 6]}
@@ -46,8 +45,8 @@ export function CanvasPC({
 
         {/* Postprocessing（Bloom 弱め） */}
         <EffectComposer>
-          <N8AO aoRadius={2} distanceFalloff={1} intensity={5} quality='medium' />
-          <Bloom intensity={0.8} luminanceThreshold={0.1} />
+          {/* <N8AO aoRadius={1} distanceFalloff={0.5} intensity={2} quality='low' /> */}
+          <Bloom intensity={0.8} luminanceThreshold={1}   radius={0.4} />
         </EffectComposer>
       </Canvas>
     </div>

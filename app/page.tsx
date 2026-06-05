@@ -23,10 +23,10 @@ export default function Home() {
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
   const keyCaps = [
-    { label: 'ABOUT ME', x: -3, color: '#FAF3E1', textColor: '#222', path: '/about' },
-    { label: 'WORKS', x: -1, color: '#FA8112', textColor: '#f7f7f7', path: '/works' },
-    { label: 'CREATIVE', x: 1, color: '#F5E7C6', textColor: '#222', path: '/creative' },
-    { label: 'ORIGINAL WORKS', x: 3, color: '#222222', textColor: '#f7f7f7', path: '/original' },
+    { label: 'ABOUT ME', x: -3, color: '#222222', textColor: '#222', path: '/about' },
+    { label: 'WORKS', x: -1, color: '#F5E7C6', textColor: '#f7f7f7', path: '/works' },
+    { label: 'CREATIVE', x: 1, color: '#FA8112', textColor: '#222', path: '/creative' },
+    { label: 'ORIGINAL WORKS', x: 3, color: '#FAF3E1', textColor: '#f7f7f7', path: '/original' },
   ];
 
   // ----------------------------------------

@@ -8,10 +8,10 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
 export function TitleScene({ phase }: { phase: string }) {
-  const { nodes } = useGLTF('/models/model__letter-f.glb');
+  const { nodes } = useGLTF('/models/model__letter-a.glb');
   const transmissionBackground = useMemo(() => new Color('#fafafa'), []);
   const geometry = useMemo(() => {
-    const source = (nodes.letter_f as Mesh).geometry;
+    const source = (nodes.letter_a as Mesh).geometry;
     const cloned = source.clone();
     cloned.computeVertexNormals();
     return cloned;
@@ -22,20 +22,29 @@ export function TitleScene({ phase }: { phase: string }) {
   const olioRef = useRef<Mesh>(null);
   const selfTimeRef = useRef(0);
 
-
-  useGSAP(() => {
-  if (phase === 'title') {
-    const tl = gsap.timeline();
-    tl.to(portRef.current!.material, { opacity: 1, duration: 1.4, ease: 'power2.out' })
-      .to(olioRef.current!.material, { opacity: 1, duration: 1.4, ease: 'power2.out' }, '<')
-      .to(fRef.current!.scale, { x: 2, y: 2, z: 2, duration: 1.4, ease: 'back.out(2)' }, '<');
-  }
-  if (phase === 'hero') {
-    const tl = gsap.timeline();
-    tl.to((portRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<')
-      .to((olioRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<');
-  }
-}, { dependencies: [phase] });
+  useGSAP(
+    () => {
+      if (phase === 'title') {
+        const tl = gsap.timeline();
+        tl.to(portRef.current!.material, { opacity: 1, duration: 1.4, ease: 'power2.out' })
+          .to(olioRef.current!.material, { opacity: 1, duration: 1.4, ease: 'power2.out' }, '<')
+          .to(fRef.current!.scale, { x: 2, y: 2, z: 2, duration: 1.4, ease: 'back.out(2)' }, '<');
+      }
+      if (phase === 'hero') {
+        const tl = gsap.timeline();
+        tl.to(
+          (portRef.current!.material as MeshStandardMaterial).color,
+          { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' },
+          '<',
+        ).to(
+          (olioRef.current!.material as MeshStandardMaterial).color,
+          { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' },
+          '<',
+        );
+      }
+    },
+    { dependencies: [phase] },
+  );
 
   const float = {
     yPhase: 1.2,
@@ -66,20 +75,7 @@ export function TitleScene({ phase }: { phase: string }) {
   return (
     <>
       <group ref={groupRef}>
-        <Text
-          ref={portRef}
-          font='/fonts/Urbanist-MediumItalic.ttf'
-          position={[-0.2, 0, -0.5]}
-          fontSize={1.6}
-          color='#fafafa'
-          anchorX='right'
-          anchorY='middle'
-          material-transparent
-          material-opacity={0}
-        >
-          Port
-        </Text>
-        <mesh ref={fRef} geometry={geometry} position={[0, 0, 0]} scale={0}>
+        <mesh ref={fRef} geometry={geometry} position={[-2.6, 0, 0]} scale={2}>
           <MeshTransmissionMaterial
             samples={6}
             resolution={512}
@@ -100,17 +96,17 @@ export function TitleScene({ phase }: { phase: string }) {
           />
         </mesh>
         <Text
-          ref={olioRef}
+          ref={portRef}
           font='/fonts/Urbanist-MediumItalic.ttf'
-          position={[0.2, 0, -0.5]}
+          position={[-1.5, 0, -0.5]}
           fontSize={1.6}
           color='#fafafa'
           anchorX='left'
           anchorY='middle'
-          material-transparent
-          material-opacity={0}
+          // material-transparent
+          // material-opacity={0}
         >
-          olio
+          Bout Me
         </Text>
       </group>
     </>
