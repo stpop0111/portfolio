@@ -9,7 +9,7 @@ import { useGSAP } from '@gsap/react';
 
 export function TitleScene({ phase }: { phase: string }) {
   const { nodes } = useGLTF('/models/model__letter-y.glb');
-  const transmissionBackground = useMemo(() => new Color('#000000'), []);
+  const transmissionBackground = useMemo(() => new Color('#fafafa'), []);
   const geometry = useMemo(() => {
     const source = (nodes.Curve as Mesh).geometry;
     const cloned = source.clone();
