@@ -55,6 +55,7 @@ export default function About() {
         trigger: '.titleSection',
         start: 'top top',
         end: '60% top',
+        scrub: true,
         onLeave: () => { gsap.to('.aboutBg', { backgroundColor: '#222222', duration: 0.4, ease: 'power2.inOut' }); },
         onEnterBack: () => { gsap.to('.aboutBg', { backgroundColor: '#FAF3E1', duration: 0.4, ease: 'power2.inOut' }); },
       },
@@ -85,7 +86,6 @@ export default function About() {
           trigger: r,
           start: 'top 60%',
           end: 'top 45%',
-          markers: true,
         },
       });
     });

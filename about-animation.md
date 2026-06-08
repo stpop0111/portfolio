@@ -346,3 +346,61 @@ About → Works で 2回目 → Creative で 3回目使うタイミングで共�
 3. **#1 リキッドシェイプ + Contact**（ページ完成感アップ）
 4. **#2 無限ループ演出**（こだわり仕上げ、最後でOK）
 
+
+---
+
+## 📸 実装スナップショット（このセッション終了時点）
+
+### 実装済み機能
+- ✅ Phase 1〜3: クリーム幕アニメ → タイトル登場（A bout Me 中央表示）
+- ✅ Phase 4: scrub でタイトル縮小・上移動・色変化
+- ✅ Phase 5: 背景色変化（クリーム→#222222）・マテリアル色反転
+- ✅ Phase 6: 7セクションの本編テキスト（Zen Old Mincho フォント）
+- ✅ 行ごとの scale + opacity スクロール演出
+- ✅ Accent 単語の青Rect→単語表示の wipe 演出
+- ✅ Lenis スクロールロック + 4秒後解禁 + scroll ヒント
+
+### 現状のファイル構成
+- `app/about/page.tsx` - メインページ、ScrollTrigger 制御
+- `app/about/Canvas/CanvasTitle/index.tsx` - Canvas wrapper（fixed inset-0 中央寄せ）
+- `app/about/Canvas/CanvasTitle/Model.tsx` - A 3Dモデル + Bout Me drei Text + scrub アニメ
+- `app/layout.tsx` - Zen_Old_Mincho フォント追加済み
+- `app/globals.css` - フォント変数 @theme inline 登録済み
+
+### 現在の ScrollTrigger 設定値
+| ターゲット | trigger | start | end | scrub |
+|---|---|---|---|---|
+| canvasTitleRef.y | `.titleSection` | `top top` | `60% top` | （設定漏れ） |
+| groupRef.scale | `.titleSection` | `top top` | `60% top` | true |
+| paragraph (各行) | `.paragraph` | `top bottom` | `top 50%` | true |
+| accent-rect | `.accent-rect` | `top 60%` | `top 45%` | （duration指定） |
+
+### 既知の調整必要ポイント
+- canvasTitleRef の scrollTrigger に `scrub: true` が抜けてる
+- accent-rect の scrub: true 指定の有無で挙動が変わる
+- `titleSection` は `h-[200vh]` で運用中
+- 60% top で完了 = 120vh あたりで色変化完了
+
+---
+
+## 🔄 セーブ更新（最新状態）
+
+### ScrollTrigger 設定（最新）
+| ターゲット | trigger | start | end | scrub | 備考 |
+|---|---|---|---|---|---|
+| canvasTitleRef.y | `.titleSection` | `top top` | `60% top` | ✅ true | HTML wrapper を `-40vh` 移動 |
+| groupRef.scale | `.titleSection` | `top top` | `60% top` | ✅ true | 3Dグループを `0.5` 倍に |
+| paragraph (各行) | `.paragraph` | `top bottom` | `top 50%` | ✅ true | scale 0.6→1 + opacity 0.2→1 |
+| accent-rect | `.accent-rect` | `top 60%` | `top 45%` | ❌（duration 0.4 で one-shot） | scaleX 1→0、回 wipe |
+
+### Phase 進行
+- `curtain` → クリーム幕アニメ実行中
+- `title` → Lenis ロック解除前 4 秒間（クリーム幕完了 → 0.8s 内に title 化、その後 4s 後にスクロール解禁）
+- `reveal` → 用意してるけど未使用（scrub で代替）
+
+### 既知の挙動・注意点
+- `titleSection` は `h-[200vh]` で、`60% top` は 120vh 地点 = 色変化完了タイミング
+- 残り 80vh で `aboutContent` が登場
+- `aboutContent` の `pb-[100vh]` で最後の行も画面中央到達可能
+- markers: true が `.accent-rect` に残ってるので、本番前に削除
+
