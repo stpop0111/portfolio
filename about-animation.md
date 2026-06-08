@@ -283,3 +283,31 @@ gsap.registerPlugin(ScrollTrigger);
 
 - Hero 設計書: `hero-animation.md`
 - ホーム実装: `app/page.tsx`、`app/hero/Canvas/CanvasTitle/`
+
+---
+
+## 🔧 リファクタリングメモ（後で共通化する時に）
+
+### 変数化したい値
+- **スクロール距離**：現状 `'+=100vh'` ハードコード → `SCROLL_DISTANCE` 変数化
+- **目的色（背景・マテリアル）**：`#222222` / `#FAF3E1` などハードコード → 各ページごとの設定オブジェクトに
+- **アニメーション時間**：`duration: 0.4` などの値も統一して定数化
+- **位置値**：`y: '-40vh'`、`scale: 0.5` も変数化
+
+### 作るべきユーティリティ
+- **RGB ⇔ HEX 変換関数**：
+  - `hexToRgb01('#222222')` → `{ r: 0.133, g: 0.133, b: 0.133 }`
+  - Three.js の `Color` は 0〜1 正規化値なので / 255 して使う
+  - 各色で手動計算してるのを統一
+
+### コンポーネント化候補
+- **PageTitle3D**：A + bout Me の 3D シーン汎用化
+  - props: `preText` / `postText` / `modelPath` / `targetColor`
+- **PageEntry**：クリーム幕の登場アニメ汎用化
+  - props: `keycapColor`
+- **PageScrollReveal**：scrub + onLeave/onEnterBack の構造汎用化
+  - props: `scrollDistance` / `fromColor` / `toColor` / `wrapperRef`
+
+### Rule of Three
+About → Works で 2回目 → Creative で 3回目使うタイミングで共通化するのがちょうどいい。
+最初から完璧な汎用化は避ける。

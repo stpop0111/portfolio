@@ -44,7 +44,7 @@ export default function Home() {
         gsap.fromTo(
           '.whiteCurtain',
           { y: '100%' },
-          { y: '0%', duration: 0.6, ease: 'power2.inOut', onComplete: () => router.push(transitionTo) },
+          { y: '0%', duration: 1.4, ease: 'power2.inOut', onComplete: () => router.push(transitionTo) },
         );
       }
     },

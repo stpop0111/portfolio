@@ -6,10 +6,12 @@ import { useMemo, useRef } from 'react';
 import { Color, DoubleSide, MeshStandardMaterial, type Group, type Mesh } from 'three';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+gsap.registerPlugin(ScrollTrigger);
 
 export function TitleScene({ phase }: { phase: string }) {
   const { nodes } = useGLTF('/models/model__letter-a.glb');
-  const transmissionBackground = useMemo(() => new Color('#fafafa'), []);
+  const transmissionBackground = useMemo(() => new Color('#FAF3E1'), []);
 
   const geometry = useMemo(() => {
     const source = (nodes.letter_a as Mesh).geometry;
@@ -26,21 +28,59 @@ export function TitleScene({ phase }: { phase: string }) {
     () => {
       if (phase === 'title') {
         const tl = gsap.timeline();
-        tl.to(textRef.current!.material, { opacity: 1, duration: 1.4, ease: 'power2.out' })
-          .to(text3dRef.current!.scale, { x: 2, y: 2, z: 2, duration: 1.4, ease: 'back.out(2)' }, '<')
-          .to(
-            (textRef.current!.material as MeshStandardMaterial).color,
-            { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' },
-            '<',
-          );
-      }
-      if (phase === 'reveal') {
-        const tl = gsap.timeline();
-        // 3D group を上に移動 + 縮小
-        tl.to(groupRef.current!.position, { y: 4.5, duration: 0.4, ease: 'power2.inOut', })
-          .to( groupRef.current!.scale, { x: 0.3, y: 0.3, z: 0.3, duration: 0.4, ease: 'power2.inOut', }, '<', )
-          .to( (textRef.current!.material as MeshStandardMaterial).color, { r: 1, g: 1, b: 1, duration: 1.2, ease: 'power2.inOut' }, '<', );
-          
+        tl.to(textRef.current!.material, {
+          opacity: 1, duration: 1.4, ease: 'power2.out' })
+          .to(text3dRef.current!.scale, {
+            x: 2, y: 2, z: 2, duration: 1.4, ease: 'back.out(2)' }, '<')
+          .to((textRef.current!.material as MeshStandardMaterial).color, {
+            r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<', )
+          .to(groupRef.current!.scale, {
+            x: 0.5, y: 0.5, z: 0.5,
+            ease: 'power2.inOut',
+            scrollTrigger: {
+              trigger: '.titleSection',
+              start: 'top top',
+              end: '+=300vh',
+              scrub: true,
+              onLeave: () => {
+                // 既存のマテリアル色変化
+                gsap.to((textRef.current!.material as MeshStandardMaterial).color, {
+                  r: 1,
+                  g: 1,
+                  b: 1,
+                  duration: 0.4,
+                  ease: 'power2.inOut',
+                });
+
+                // ↓ 追加：transmissionBackground も同期
+                gsap.to(transmissionBackground, {
+                  r: 0.133,
+                  g: 0.133,
+                  b: 0.133, // #222222
+                  duration: 0.4,
+                  ease: 'power2.inOut',
+                });
+              },
+              onEnterBack: () => {
+                gsap.to((textRef.current!.material as MeshStandardMaterial).color, {
+                  r: 0.1,
+                  g: 0.1,
+                  b: 0.1,
+                  duration: 0.4,
+                  ease: 'power2.inOut',
+                });
+
+                // ↓ 追加：戻す
+                gsap.to(transmissionBackground, {
+                  r: 0.98,
+                  g: 0.953,
+                  b: 0.882, // #FAF3E1
+                  duration: 0.4,
+                  ease: 'power2.inOut',
+                });
+              },
+            },
+          });
       }
     },
     { dependencies: [phase] },
