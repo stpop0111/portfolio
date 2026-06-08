@@ -41,9 +41,8 @@ export default function About() {
       {/* z-10: クリーム幕②（兼 背景）下から上がってきて停止 → そのまま背景 */}
       <div className='aboutBg fixed inset-0 z-10' style={{ backgroundColor: '#FAF3E1' }} />
       {/* z-20: タイトルロゴ（クリーム幕より上に表示） */}
-      <section className='titleSection relative z-20 h-screen'>
       <CanvasTitle phase={phase} ref={canvasTitleRef} />
-      </section>
+      <section className='titleSection relative z-20 h-screen'></section>
 
       {/* z-auto: スクロール用コンテンツ */}
       <section className='aboutContent relative h-[400vh]'>{/* 本編 */}</section>
