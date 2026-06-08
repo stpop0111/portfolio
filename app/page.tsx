@@ -162,29 +162,17 @@ export default function Home() {
   return (
     <main className='flex flex-1 items-center justify-center bg-zinc-50 text-zinc-50'>
       {/* 幕 */}
-      <Curtains
-        show={showCurtain}
-        colors={['bg-zinc-700', 'bg-zinc-600', 'bg-zinc-500', 'bg-zinc-400', 'bg-zinc-300', 'bg-zinc-200']}
-      />
+      <Curtains show={showCurtain} colors={['bg-zinc-700', 'bg-zinc-600', 'bg-zinc-500', 'bg-zinc-400', 'bg-zinc-300', 'bg-zinc-200']} />
 
       {/* PCモデルの配置 */}
       <CanvasPC ref={canvasPCRef} hoveredKey={hoveredKey} />
 
       {/* グラデーション（PCモデルより前に） */}
-      <div
-        className='gradientOverlay h-50vh[] fixed inset-0 pointer-events-none'
-        style={{
-          background: 'linear-gradient(0deg,rgba(250, 243, 225, 1) 0%, rgba(255, 255, 225, 0) 30%)',
-          zIndex: 30,
-        }}
+      <div className='gradientOverlay h-50vh[] fixed inset-0 pointer-events-none'
+        style={{ background: 'linear-gradient(0deg,rgba(250, 243, 225, 1) 0%, rgba(255, 255, 225, 0) 30%)', zIndex: 30, }}
       />
       {phase === 'hero' && (
-        <CanvasNavKey
-          ref={canvasNavKeyRef}
-          keyCaps={keyCaps}
-          onKeyCapClick={handleClick}
-          onKeyCapHover={setHoveredKey}
-        />
+        <CanvasNavKey ref={canvasNavKeyRef} keyCaps={keyCaps} onKeyCapClick={handleClick} onKeyCapHover={setHoveredKey} />
       )}
 
       <div className='whiteCurtain fixed inset-0 z-100 bg-zinc-50' style={{ transform: 'translateY(100%)' }} />

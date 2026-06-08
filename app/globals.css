@@ -13,7 +13,8 @@
   --font-righteous: var(--font-righteous);
   --font-urbanist: var(--font-urbanist);
   --font-dotgothic16 : var(--font-dotgothic16);
-  --font-instrument-serif: var(--font-instrument-serif)
+  --font-instrument-serif: var(--font-instrument-serif);
+  --font-zen-old-mincho: var(--font-zen-old-mincho);
 }
 
 @media (prefers-color-scheme: dark) {

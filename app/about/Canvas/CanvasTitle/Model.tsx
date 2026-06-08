@@ -35,49 +35,20 @@ export function TitleScene({ phase }: { phase: string }) {
           .to((textRef.current!.material as MeshStandardMaterial).color, {
             r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<', )
           .to(groupRef.current!.scale, {
-            x: 0.5, y: 0.5, z: 0.5,
-            ease: 'power2.inOut',
+            x: 0.5, y: 0.5, z: 0.5, ease: 'power2.inOut',
             scrollTrigger: {
               trigger: '.titleSection',
               start: 'top top',
-              end: '+=300vh',
+              end: '60% top',
               scrub: true,
+              // マテリアルの変化
               onLeave: () => {
-                // 既存のマテリアル色変化
-                gsap.to((textRef.current!.material as MeshStandardMaterial).color, {
-                  r: 1,
-                  g: 1,
-                  b: 1,
-                  duration: 0.4,
-                  ease: 'power2.inOut',
-                });
-
-                // ↓ 追加：transmissionBackground も同期
-                gsap.to(transmissionBackground, {
-                  r: 0.133,
-                  g: 0.133,
-                  b: 0.133, // #222222
-                  duration: 0.4,
-                  ease: 'power2.inOut',
-                });
+                gsap.to((textRef.current!.material as MeshStandardMaterial).color, { r: 1, g: 1, b: 1, duration: 0.4, ease: 'power2.inOut', });
+                gsap.to(transmissionBackground, { r: 0.133, g: 0.133, b: 0.133, duration: 0.4, ease: 'power2.inOut', });
               },
               onEnterBack: () => {
-                gsap.to((textRef.current!.material as MeshStandardMaterial).color, {
-                  r: 0.1,
-                  g: 0.1,
-                  b: 0.1,
-                  duration: 0.4,
-                  ease: 'power2.inOut',
-                });
-
-                // ↓ 追加：戻す
-                gsap.to(transmissionBackground, {
-                  r: 0.98,
-                  g: 0.953,
-                  b: 0.882, // #FAF3E1
-                  duration: 0.4,
-                  ease: 'power2.inOut',
-                });
+                gsap.to((textRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 0.4, ease: 'power2.inOut', });
+                gsap.to(transmissionBackground, { r: 0.98, g: 0.953, b: 0.882, duration: 0.4, ease: 'power2.inOut', });
               },
             },
           });

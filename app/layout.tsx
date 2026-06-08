@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Righteous, Urbanist, DotGothic16, Instrument_Serif } from 'next/font/google';
+import { Geist, Geist_Mono, Righteous, Urbanist, DotGothic16, Instrument_Serif, Zen_Old_Mincho } from 'next/font/google';
 import './globals.css';
 import LenisWrapper from './components/LenisWrapper';
 
@@ -40,7 +40,13 @@ const instrumentSerif = Instrument_Serif({
   variable: '--font-instrument-serif',
   subsets: ['latin'],
   weight: '400',
-  style: ['normal', 'italic'],   // ← italic も使うなら（Google Fonts URL の ital@0;1 と同じ）
+  style: ['normal', 'italic']
+});
+
+const zenOldMincho = Zen_Old_Mincho({
+  variable: '--font-zen-old-mincho',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '900'],
 });
 
 export default function RootLayout({
@@ -49,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en' className={` ${geistSans.variable} ${geistMono.variable} ${righteous.variable} ${urbanist.variable} ${dotgothic16.variable} ${instrumentSerif.variable} h-full antialiased`}>
+    <html lang='en' className={`${zenOldMincho.variable} ${geistSans.variable} ${geistMono.variable} ${righteous.variable} ${urbanist.variable} ${dotgothic16.variable} ${instrumentSerif.variable} h-full antialiased`}>
       <body className='min-h-full flex flex-col'>
         <LenisWrapper>{children}</LenisWrapper>
       </body>
