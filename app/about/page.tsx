@@ -12,6 +12,8 @@ import { useRef, useState, useEffect } from 'react';
 import { CanvasTitle } from './Canvas/CanvasTitle';
 // Lenis
 import { useLenis } from 'lenis/react';
+// Blob生成
+import * as blobs from 'blobs/v2';
 
 export default function About() {
   const [phase, setPhase] = useState<'curtain' | 'title' | 'reveal'>('curtain');
@@ -104,16 +106,13 @@ export default function About() {
   useGSAP(() => {
     if (!contactBlobRef.current) return;
     
-    const variations = Array.from({ length: 5 }, () => jitter(BASE_PATH, 12));
+    const variations = Array.from({ length: 5 }, () => makeBlob(4));
     const tl = gsap.timeline({ repeat: -1 });
     variations.forEach((variant) => {
-      tl.to(contactBlobRef.current, { morphSVG: variant, duration: 3, ease: 'sine.inOut', }); 
-    })
-    tl.to(contactBlobRef.current, {   morphSVG: {
-    shape: BASE_PATH,
-    type: 'rotational', 
-    shapeIndex: 'auto',
-  }, duration: 3, ease: 'sine.inOut', });
+      tl.to(contactBlobRef.current, { morphSVG: variant, duration: 4, ease: 'sine.inOut' });
+    });
+    // 最後にベースに戻す
+    tl.to(contactBlobRef.current, { morphSVG: BASE_PATH, duration: 4, ease: 'sine.inOut' });
   }, []);
 
   return (
@@ -264,9 +263,11 @@ function Scrollhint({ showScrollHint }: { showScrollHint: boolean }) {
   );
 }
 
-function jitter(path: string, amount: number = 100): string {
-  return path.replace(/(\d+\.?\d*)/g, (num) => {
-    const n = parseFloat(num);
-    return (n + (Math.random() - 0.5) * amount).toFixed(3);
+function makeBlob(randomness: number = 4): string {
+  return blobs.svgPath({
+    seed: Math.random().toString(),
+    extraPoints: 8,
+    randomness,
+    size: 716,
   });
 }
