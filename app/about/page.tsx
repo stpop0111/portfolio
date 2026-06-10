@@ -12,6 +12,8 @@ import { useRef, useState, useEffect } from 'react';
 import { CanvasTitle } from './Canvas/CanvasTitle';
 // Lenis
 import { useLenis } from 'lenis/react';
+// Blob生成
+import * as blobs from 'blobs/v2';
 
 export default function About() {
   const [phase, setPhase] = useState<'curtain' | 'title' | 'reveal'>('curtain');
@@ -104,16 +106,13 @@ export default function About() {
   useGSAP(() => {
     if (!contactBlobRef.current) return;
     
-    const variations = Array.from({ length: 5 }, () => jitter(BASE_PATH, 12));
+    const variations = Array.from({ length: 5 }, () => makeBlob(2));
     const tl = gsap.timeline({ repeat: -1 });
     variations.forEach((variant) => {
-      tl.to(contactBlobRef.current, { morphSVG: variant, duration: 3, ease: 'sine.inOut', }); 
-    })
-    tl.to(contactBlobRef.current, {   morphSVG: {
-    shape: BASE_PATH,
-    type: 'rotational', 
-    shapeIndex: 'auto',
-  }, duration: 3, ease: 'sine.inOut', });
+      tl.to(contactBlobRef.current, { morphSVG: variant, duration: 4, ease: 'sine.inOut' });
+    });
+    // 最後にベースに戻す
+    tl.to(contactBlobRef.current, { morphSVG: BASE_PATH, duration: 4, ease: 'sine.inOut' });
   }, []);
 
   return (
@@ -206,7 +205,7 @@ export default function About() {
       <section className='contactSection relative z-20 h-screen flex items-center justify-center'>
         <svg 
           viewBox='0 0 716 445' 
-          className='absolute w-[80vw] max-w-175 h-auto'
+          className='absolute w-[80vw] max-w-180 h-auto'
         >
           <path
             ref={contactBlobRef}
@@ -224,7 +223,7 @@ export default function About() {
           </h2>
           <a 
             href='mailto:stpop0111@gmail.com' 
-            className='text-base text-zinc-700 mt-12 inline-block hover:underline'
+            className='font-instrument-serif text-base text-zinc-700 mt-12 inline-block hover:underline'
           >
             (send me mail)
           </a>
@@ -264,9 +263,19 @@ function Scrollhint({ showScrollHint }: { showScrollHint: boolean }) {
   );
 }
 
-function jitter(path: string, amount: number = 100): string {
-  return path.replace(/(\d+\.?\d*)/g, (num) => {
-    const n = parseFloat(num);
-    return (n + (Math.random() - 0.5) * amount).toFixed(3);
+function makeBlob(randomness: number = 2): string {
+  const path = blobs.svgPath({
+    seed: Math.random().toString(),
+    extraPoints: 8,
+    randomness,
+    size: 716,
+  });
+  // blobs は size×size の正方形内に生成するため、viewBox (716×445) に収まるよう
+  // Y座標のみ 445/716 に圧縮する（パスの数値は x,y が交互に並ぶ）
+  let isX = true;
+  return path.replace(/-?\d+(?:\.\d+)?/g, (num) => {
+    const result = isX ? num : (parseFloat(num) * (445 / 716)).toFixed(3);
+    isX = !isX;
+    return result;
   });
 }
