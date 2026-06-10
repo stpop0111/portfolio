@@ -106,7 +106,7 @@ export default function About() {
   useGSAP(() => {
     if (!contactBlobRef.current) return;
     
-    const variations = Array.from({ length: 5 }, () => makeBlob(4));
+    const variations = Array.from({ length: 5 }, () => makeBlob(2));
     const tl = gsap.timeline({ repeat: -1 });
     variations.forEach((variant) => {
       tl.to(contactBlobRef.current, { morphSVG: variant, duration: 4, ease: 'sine.inOut' });
@@ -263,11 +263,19 @@ function Scrollhint({ showScrollHint }: { showScrollHint: boolean }) {
   );
 }
 
-function makeBlob(randomness: number = 4): string {
-  return blobs.svgPath({
+function makeBlob(randomness: number = 2): string {
+  const path = blobs.svgPath({
     seed: Math.random().toString(),
     extraPoints: 8,
     randomness,
     size: 716,
+  });
+  // blobs は size×size の正方形内に生成するため、viewBox (716×445) に収まるよう
+  // Y座標のみ 445/716 に圧縮する（パスの数値は x,y が交互に並ぶ）
+  let isX = true;
+  return path.replace(/-?\d+(?:\.\d+)?/g, (num) => {
+    const result = isX ? num : (parseFloat(num) * (445 / 716)).toFixed(3);
+    isX = !isX;
+    return result;
   });
 }
