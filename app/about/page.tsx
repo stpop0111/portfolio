@@ -205,7 +205,7 @@ export default function About() {
       <section className='contactSection relative z-20 h-screen flex items-center justify-center'>
         <svg 
           viewBox='0 0 716 445' 
-          className='absolute w-[80vw] max-w-175 h-auto'
+          className='absolute w-[80vw] max-w-180 h-auto'
         >
           <path
             ref={contactBlobRef}
@@ -223,7 +223,7 @@ export default function About() {
           </h2>
           <a 
             href='mailto:stpop0111@gmail.com' 
-            className='text-base text-zinc-700 mt-12 inline-block hover:underline'
+            className='font-instrument-serif text-base text-zinc-700 mt-12 inline-block hover:underline'
           >
             (send me mail)
           </a>
