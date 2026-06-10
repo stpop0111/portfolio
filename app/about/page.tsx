@@ -4,7 +4,8 @@
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-gsap.registerPlugin(ScrollTrigger);
+import { MorphSVGPlugin } from 'gsap/MorphSVGPlugin';
+gsap.registerPlugin(ScrollTrigger, MorphSVGPlugin);
 // React
 import { useRef, useState, useEffect } from 'react';
 // コンポーネント
@@ -91,10 +92,32 @@ export default function About() {
     });
   }, []);
 
+  /* Blob のうねうねモーフィング */
+    const contactBlobRef = useRef<SVGPathElement>(null);
+    const BASE_PATH = 'M363.275 0.0130943C455.847 0.699279 540.394 29.6867 605.639 71.3936C670.645 112.948 720.327 166.798 715.701 225.297C711.243 281.669 645.908 324.953 582.461 364.483C519.853 403.49 450.91 442.558 363.275 444.871C272.785 447.259 190.679 416.207 125.082 376.553C57.565 335.738 1.95118 284.48 0.054691 225.297C-1.87345 165.127 47.387 109.81 115.187 67.7581C182.131 26.2362 269.702 -0.680518 363.275 0.0130943Z';
+
+
+    useEffect(() => {
+      contactBlobRef.current?.setAttribute('d', BASE_PATH);
+    }, []);
+
+  useGSAP(() => {
+    if (!contactBlobRef.current) return;
+    
+    const variations = Array.from({ length: 5 }, () => jitter(BASE_PATH, 12));
+    const tl = gsap.timeline({ repeat: -1 });
+    variations.forEach((variant) => {
+      tl.to(contactBlobRef.current, { morphSVG: variant, duration: 3, ease: 'sine.inOut', }); 
+    })
+    tl.to(contactBlobRef.current, {   morphSVG: {
+    shape: BASE_PATH,
+    type: 'rotational', 
+    shapeIndex: 'auto',
+  }, duration: 3, ease: 'sine.inOut', });
+  }, []);
+
   return (
     <main>
-      {/* z-10: クリーム幕②（兼 背景）下から上がってきて停止 → そのまま背景 */}
-      <div className='aboutBg fixed inset-0 z-10' style={{ backgroundColor: '#FAF3E1' }} />
       {/* z-20: タイトルロゴ（クリーム幕より上に表示） */}
       <section className='titleSection h-[200vh] pointer-events-none'>
         <CanvasTitle ref={canvasTitleRef} phase={phase} />
@@ -102,7 +125,7 @@ export default function About() {
 
       {/* z-auto: スクロール用コンテンツ */}
       <section className='aboutContent relative z-20'>
-        <div className='introBlock text-center space-y-[20vh] pb-[100vh]'>
+        <div className='introBlock space-y-[20vh]'>
           {/* セクション1: 自己紹介 */}
           <div className=''>
             <Paragraph>
@@ -179,6 +202,38 @@ export default function About() {
         </div>
       </section>
 
+      {/* コンタクト */}
+      <section className='contactSection relative z-20 h-screen flex items-center justify-center'>
+        <svg 
+          viewBox='0 0 716 445' 
+          className='absolute w-[80vw] max-w-175 h-auto'
+        >
+          <path
+            ref={contactBlobRef}
+            id='contactBlob'
+            d={BASE_PATH}
+            fill='#C4C4C4'
+          />
+        </svg>
+
+        {/* テキストオーバーレイ */}
+        <div className='relative z-10 text-center px-12'>
+          <p className='text-2xl text-zinc-900'>you want work with me</p>
+          <h2 className='text-4xl font-zen-old-mincho text-zinc-900 mt-2'>
+            あなたのお仕事にご協力させてください
+          </h2>
+          <a 
+            href='mailto:stpop0111@gmail.com' 
+            className='text-base text-zinc-700 mt-12 inline-block hover:underline'
+          >
+            (send me mail)
+          </a>
+        </div>
+      </section>
+
+      {/* z-10: クリーム幕②（兼 背景）下から上がってきて停止 → そのまま背景 */}
+      <section className='aboutBg fixed inset-0 z-10' style={{ backgroundColor: '#FAF3E1' }} />
+
       <Scrollhint showScrollHint={showScrollHint} />
     </main>
   );
@@ -194,7 +249,7 @@ function Accent({ children }: { children: React.ReactNode }) {
 }
 
 function Paragraph({ children }: { children: React.ReactNode }) {
-  return <p className='paragraph font-zen-old-mincho text-5xl leading-snug font-semibold text-[#FAF3E1]'>{children}</p>;
+  return <p className='paragraph text-center font-zen-old-mincho text-5xl leading-snug font-semibold text-[#FAF3E1]'>{children}</p>;
 }
 
 function Scrollhint({ showScrollHint }: { showScrollHint: boolean }) {
@@ -207,4 +262,11 @@ function Scrollhint({ showScrollHint }: { showScrollHint: boolean }) {
       SCROLL ↓
     </div>
   );
+}
+
+function jitter(path: string, amount: number = 100): string {
+  return path.replace(/(\d+\.?\d*)/g, (num) => {
+    const n = parseFloat(num);
+    return (n + (Math.random() - 0.5) * amount).toFixed(3);
+  });
 }
