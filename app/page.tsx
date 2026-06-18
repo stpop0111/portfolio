@@ -93,11 +93,8 @@ export default function Home() {
       if (phase === 'loading') {
         const tl = gsap.timeline({ repeat: -1 });
         gsap.utils.toArray<Element>('.loading').forEach((char) => {
-          tl.to(char, { y: -2, duration: 0.1, ease: 'power2.out' }, '-=0.2').to(char, {
-            y: 0,
-            duration: 0.15,
-            ease: 'power2.in',
-          });
+          tl.to(char, { y: -2, duration: 0.1, ease: 'power2.out' }, '-=0.2')
+            .to(char, { y: 0, duration: 0.15, ease: 'power2.in', });
         });
       }
       /* アニメーション : タイトルの表示切り替え */

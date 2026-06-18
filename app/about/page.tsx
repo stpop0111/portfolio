@@ -14,6 +14,7 @@ import { CanvasTitle } from './Canvas/CanvasTitle';
 import { useLenis } from 'lenis/react';
 // Blob生成
 import * as blobs from 'blobs/v2';
+import { SplitText } from '../components/splitText';
 
 export default function About() {
   const [phase, setPhase] = useState<'curtain' | 'title' | 'reveal'>('curtain');
@@ -82,38 +83,55 @@ export default function About() {
       );
     });
     /* 行のレクトを縮小 */
-    gsap.utils.toArray<HTMLElement>('.accent-rect').forEach((r) => {
+    gsap.utils.toArray<HTMLElement>('.rect').forEach((r) => {
       gsap.to(r, 
         { scaleX: 0, ease: 'power3.inOut', duration: 0.4,
         scrollTrigger: {
           trigger: r,
-          start: 'top 60%',
-          end: 'top 45%',
+          start: 'top 80%',
         },
       });
     });
   }, []);
 
   /* Blob のうねうねモーフィング */
-    const contactBlobRef = useRef<SVGPathElement>(null);
-    const BASE_PATH = 'M363.275 0.0130943C455.847 0.699279 540.394 29.6867 605.639 71.3936C670.645 112.948 720.327 166.798 715.701 225.297C711.243 281.669 645.908 324.953 582.461 364.483C519.853 403.49 450.91 442.558 363.275 444.871C272.785 447.259 190.679 416.207 125.082 376.553C57.565 335.738 1.95118 284.48 0.054691 225.297C-1.87345 165.127 47.387 109.81 115.187 67.7581C182.131 26.2362 269.702 -0.680518 363.275 0.0130943Z';
-
-
-    useEffect(() => {
-      contactBlobRef.current?.setAttribute('d', BASE_PATH);
-    }, []);
+  const contactBlobRef = useRef<SVGPathElement>(null);
+  const BASE_PATH = 'M363.275 0.0130943C455.847 0.699279 540.394 29.6867 605.639 71.3936C670.645 112.948 720.327 166.798 715.701 225.297C711.243 281.669 645.908 324.953 582.461 364.483C519.853 403.49 450.91 442.558 363.275 444.871C272.785 447.259 190.679 416.207 125.082 376.553C57.565 335.738 1.95118 284.48 0.054691 225.297C-1.87345 165.127 47.387 109.81 115.187 67.7581C182.131 26.2362 269.702 -0.680518 363.275 0.0130943Z';
 
   useGSAP(() => {
-    if (!contactBlobRef.current) return;
-    
-    const variations = Array.from({ length: 5 }, () => makeBlob(2));
+    const variations = Array.from({ length: 5 }, () => makeBlob(1));
     const tl = gsap.timeline({ repeat: -1 });
     variations.forEach((variant) => {
-      tl.to(contactBlobRef.current, { morphSVG: variant, duration: 4, ease: 'sine.inOut' });
+      tl.to(contactBlobRef.current, { morphSVG: variant, duration: 2, ease: 'sine.inOut' });
     });
-    // 最後にベースに戻す
     tl.to(contactBlobRef.current, { morphSVG: BASE_PATH, duration: 4, ease: 'sine.inOut' });
+
   }, []);
+
+
+
+  useGSAP(() => {
+    const tl = gsap.timeline({
+      scrollTrigger: {
+          trigger: '.contactSection',
+          start: 'top 40%',  // 画面下から 80% で発火
+      }
+    })
+    tl.fromTo(contactBlobRef.current,
+      {scale:0, opacity:0, transformOrigin: 'center center'},
+      {scale:1, opacity:1, duration:1,transformOrigin: 'center center', ease:'power4.inOut'}
+    )
+      .fromTo('.contactText',
+        { y: '-100%' },
+        { y: 0, duration: 0.3, 
+          stagger: { 
+            amount: 1.6,
+            from: 'start', 
+          },
+          ease: 'power2.out',
+        }
+      );
+  })
 
   return (
     <main>
@@ -127,22 +145,15 @@ export default function About() {
         <div className='introBlock space-y-[20vh]'>
           {/* セクション1: 自己紹介 */}
           <div className=''>
-            <Paragraph>
-              こんにちは、<Accent>Seita</Accent>です。
-            </Paragraph>
+            <Paragraph>こんにちは、<Accent>Seita</Accent>です。</Paragraph>
             <Paragraph>Webの仕事に</Paragraph>
             <Paragraph>小さく挑戦している</Paragraph>
-            <Paragraph>
-              <Accent>Junior</Accent>
-              <Accent>Web</Accent>
-              <Accent>Developer</Accent>です。
-            </Paragraph>
+            <Paragraph><Accent>Junior</Accent><Accent>Web</Accent><Accent>Developer</Accent>です。 </Paragraph>
           </div>
 
           {/* セクション2: バックグラウンド */}
           <div className=''>
-            <Paragraph>
-              電子工業科で<Accent>C</Accent>や<Accent>Python</Accent>に触れ、
+            <Paragraph> 電子工業科で<Accent>C</Accent>や<Accent>Python</Accent>に触れ、
             </Paragraph>
             <Paragraph>国際教養学部で言葉を学び、</Paragraph>
             <Paragraph>今はコードに戻ってきました。</Paragraph>
@@ -150,12 +161,8 @@ export default function About() {
 
           {/* セクション3: 現在のロール */}
           <div className=''>
-            <Paragraph>
-              <Accent>小さなチームのリード</Accent>として、
-            </Paragraph>
-            <Paragraph>
-              <Accent>ECサイト</Accent>の企画から実装まで、
-            </Paragraph>
+            <Paragraph><Accent fontFamily='font-kozuka-mincho normal'>小さなチームのリード</Accent>として、</Paragraph>
+            <Paragraph><Accent fontFamily='font-kozuka-mincho'>ECサイト</Accent>の企画から実装まで、</Paragraph>
             <Paragraph>ひとつの頭で考えています。</Paragraph>
           </div>
 
@@ -163,17 +170,14 @@ export default function About() {
           <div className=''>
             <Paragraph>企画もデザインも、</Paragraph>
             <Paragraph>コードも分析も、</Paragraph>
-            <Paragraph>
-              すべて<Accent>地続き</Accent>の仕事として。
-            </Paragraph>
+            <Paragraph>すべて<Accent fontFamily='font-kozuka-mincho'>地続き</Accent>の仕事として。</Paragraph>
           </div>
 
           {/* セクション5: 制作哲学 */}
           <div className=''>
             <Paragraph>つくるものは、</Paragraph>
             <Paragraph>次に触る誰かにも、</Paragraph>
-            <Paragraph>
-              <Accent>やさしくありたい</Accent>。
+            <Paragraph><Accent fontFamily='font-kozuka-mincho'>やさしくありたい</Accent>。
             </Paragraph>
           </div>
 
@@ -181,7 +185,7 @@ export default function About() {
           <div className=''>
             <Paragraph>ひとりでできることを増やすことより、</Paragraph>
             <Paragraph>
-              <Accent>チーム</Accent>でできることを増やす方が、
+              <Accent fontFamily='font-kozuka-mincho'>チーム</Accent>でできることを増やす方が、
             </Paragraph>
             <Paragraph>わたしは好きです。</Paragraph>
           </div>
@@ -189,13 +193,13 @@ export default function About() {
           {/* セクション7: 締め */}
           <div className=''>
             <Paragraph>
-              いつも<Accent>好奇心</Accent>を持って、
+              いつも<Accent fontFamily='font-kozuka-mincho'>好奇心</Accent>を持って、
             </Paragraph>
             <Paragraph>
-              いつも<Accent>学び</Accent>ながら、
+              いつも<Accent fontFamily='font-kozuka-mincho'>学び</Accent>ながら、
             </Paragraph>
             <Paragraph>
-              いつも、<Accent>細部</Accent>に。
+              いつも、<Accent fontFamily='font-kozuka-mincho'>細部</Accent>に。
             </Paragraph>
           </div>
         </div>
@@ -203,31 +207,25 @@ export default function About() {
 
       {/* コンタクト */}
       <section className='contactSection relative z-20 h-screen flex items-center justify-center'>
-        <svg 
-          viewBox='0 0 716 445' 
-          className='absolute w-[80vw] max-w-180 h-auto'
+        <a
+          href='mailto:stpop0111@gmail.com'
+          className={`flex items-center justify-center group`}
         >
-          <path
-            ref={contactBlobRef}
-            id='contactBlob'
-            d={BASE_PATH}
-            fill='#C4C4C4'
-          />
-        </svg>
+          
+          {/* 背景のblob */}
+          <svg viewBox='0 0 716 445' className='absolute w-[80vw] max-w-180 h-auto overflow-visible' >
+            <path ref={contactBlobRef} id='contactBlob' d={BASE_PATH} fill='#C4C4C4' />
+          </svg>
+          {/* テキストオーバーレイ */}
+          <div className='relative z-10 text-center px-12'>
+            <div className=" font-noto-sans-jp">
+              <p className='overflow-hidden text-zinc-600 text-2xl font-futura'><SplitText text='I wanna join your work with you' className='contactText'/></p>
+              <h2 className='overflow-hidden text-zinc-900 text-3xl font-kozuka-gothic font-semibold'><SplitText text='あなたのお仕事にご協力させてください' className='contactText'/></h2>
+            </div>
+            <p className='font-seasons overflow-hidden text-base text-zinc-900 mt-3 group-hover:underline'><SplitText text='(send me mail)' className='contactText'/></p>
+          </div>
+        </a>
 
-        {/* テキストオーバーレイ */}
-        <div className='relative z-10 text-center px-12'>
-          <p className='text-2xl text-zinc-900'>you want work with me</p>
-          <h2 className='text-4xl font-zen-old-mincho text-zinc-900 mt-2'>
-            あなたのお仕事にご協力させてください
-          </h2>
-          <a 
-            href='mailto:stpop0111@gmail.com' 
-            className='font-instrument-serif text-base text-zinc-700 mt-12 inline-block hover:underline'
-          >
-            (send me mail)
-          </a>
-        </div>
       </section>
 
       {/* z-10: クリーム幕②（兼 背景）下から上がってきて停止 → そのまま背景 */}
@@ -238,17 +236,17 @@ export default function About() {
   );
 }
 
-function Accent({ children }: { children: React.ReactNode }) {
+function Accent({ children, fontFamily = 'font-corporate-a italic' }: { children: React.ReactNode; fontFamily?: string }) {
   return (
-    <span className='accent relative inline-block px-4'>
-      <span className='accent-text font-instrument-serif text-[#1d4ed8] italic z-1'>{children}</span>
-      <span className='accent-rect absolute inset-0 bg-[#1d4ed8] origin-right scale-x-100 z-2' />
+    <span className='relative inline-block px-4'>
+      <span className={`${fontFamily} font-semibold text-[#1d4ed8] z-1`}>{children}</span>
+      <span className='rect absolute inset-0 bg-[#1d4ed8] origin-right scale-x-100 z-2' />
     </span>
   );
 }
 
 function Paragraph({ children }: { children: React.ReactNode }) {
-  return <p className='paragraph text-center font-zen-old-mincho text-5xl leading-snug font-semibold text-[#FAF3E1]'>{children}</p>;
+  return <p className='paragraph text-center font-kozuka-gothic text-5xl leading-snug font-semibold text-[#FAF3E1]'>{children}</p>;
 }
 
 function Scrollhint({ showScrollHint }: { showScrollHint: boolean }) {
@@ -266,12 +264,10 @@ function Scrollhint({ showScrollHint }: { showScrollHint: boolean }) {
 function makeBlob(randomness: number = 2): string {
   const path = blobs.svgPath({
     seed: Math.random().toString(),
-    extraPoints: 8,
+    extraPoints: 4,
     randomness,
     size: 716,
   });
-  // blobs は size×size の正方形内に生成するため、viewBox (716×445) に収まるよう
-  // Y座標のみ 445/716 に圧縮する（パスの数値は x,y が交互に並ぶ）
   let isX = true;
   return path.replace(/-?\d+(?:\.\d+)?/g, (num) => {
     const result = isX ? num : (parseFloat(num) * (445 / 716)).toFixed(3);

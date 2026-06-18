@@ -157,7 +157,7 @@ export function KeyCap({
       {hovered && (
         <Html position={[0, 1, 0]} center>
           <div
-            className='text-zinc-950 relative rounded-full whitespace-nowrap text-4xl font-instrument-serif italic'
+            className='text-zinc-950 relative rounded-full whitespace-nowrap text-4xl font-corporate-a italic font-medium'
           >
             {keyCap.label}
           </div>

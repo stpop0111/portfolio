@@ -1,53 +1,7 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Righteous, Urbanist, DotGothic16, Instrument_Serif, Zen_Old_Mincho } from 'next/font/google';
 import './globals.css';
 import LenisWrapper from './components/LenisWrapper';
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
-
-const righteous = Righteous({
-  variable: '--font-righteous',
-  subsets: ['latin'],
-  weight: '400',
-});
-
-const urbanist = Urbanist({
-  variable: '--font-urbanist',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-})
-
-export const metadata: Metadata = {
-  title: 'seita izaki - Portfolio',
-  description: 'about me',
-};
-
-export const dotgothic16 = DotGothic16({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-dotgothic16",
-});
-
-const instrumentSerif = Instrument_Serif({
-  variable: '--font-instrument-serif',
-  subsets: ['latin'],
-  weight: '400',
-  style: ['normal', 'italic']
-});
-
-const zenOldMincho = Zen_Old_Mincho({
-  variable: '--font-zen-old-mincho',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '900'],
-});
+import Script from 'next/script';
 
 export default function RootLayout({
   children,
@@ -55,8 +9,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en' className={`${zenOldMincho.variable} ${geistSans.variable} ${geistMono.variable} ${righteous.variable} ${urbanist.variable} ${dotgothic16.variable} ${instrumentSerif.variable} h-full antialiased`}>
+    <html lang='en' className={`h-full antialiased`}>
       <body className='min-h-full flex flex-col'>
+        <Script id='adobe-fonts' strategy='beforeInteractive'>
+          {` (function(d) { var config = { kitId: 'dke3pds', scriptTimeout: 3000, async: true }, h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\\bwf-loading\\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s) })(document); `}
+        </Script>
         <LenisWrapper>{children}</LenisWrapper>
       </body>
     </html>

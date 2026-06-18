@@ -118,7 +118,7 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
       `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}` +
       `:${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-    ctx.font = `bold 40px "DotGothic16", monospace`;
+    ctx.font = `bold 40px "dotgothic16", monospace`;
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
@@ -130,7 +130,7 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
       const FONT_SIZE = 300;
 
       /* フォントの書式設定 */
-      ctx.font = `bold ${FONT_SIZE}px "DotGothic16", sans-serif`;
+      ctx.font = `bold ${FONT_SIZE}px "dotgothic16", sans-serif`;
       ctx.fillStyle = '#f90';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
@@ -149,13 +149,13 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
         x += textWidth + SPACING;
       }
     } else {
-      ctx.font = `bold 160px "DotGothic16", sans-serif`;
-      ctx.font = `bold 160px "DotGothic16", sans-serif`;
+      ctx.font = `bold 160px "dotgothic16", sans-serif`;
+      ctx.font = `bold 160px "dotgothic16", sans-serif`;
       ctx.fillStyle = '#fafafa';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('(^o^)/', canvas.width / 2, canvas.height / 2);
-      ctx.font = `bold 80px "DotGothic16", sans-serif`;
+      ctx.font = `bold 80px "dotgothic16", sans-serif`;
       ctx.textAlign = 'right';
       ctx.textBaseline = 'bottom';
     }
