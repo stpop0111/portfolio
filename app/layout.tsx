@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import LenisWrapper from './components/LenisWrapper';
+import LenisWrapper from './_components/LenisWrapper';
 import Script from 'next/script';
 
 export default function RootLayout({
