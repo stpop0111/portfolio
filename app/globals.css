@@ -23,4 +23,10 @@
 
 body {
   font-family: Arial, Helvetica, sans-serif;
+  opacity: 1;
+  transition: opacity 0s ease;
+}
+
+.wf-loading body {
+  opacity: 0;
 }
