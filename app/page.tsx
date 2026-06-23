@@ -206,14 +206,13 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
           zIndex: 30,
         }}
       />
-      {phase === 'hero' && (
-        <CanvasNavKey
-          ref={canvasNavKeyRef}
-          keyCaps={keyCaps}
-          onKeyCapClick={handleClick}
-          onKeyCapHover={setHoveredKey}
-        />
-      )}
+      {/* キーキャップ：常時マウント（hero切替の瞬間にWebGL初期化が走らないようにする） */}
+      <CanvasNavKey
+        ref={canvasNavKeyRef}
+        keyCaps={keyCaps}
+        onKeyCapClick={handleClick}
+        onKeyCapHover={setHoveredKey}
+      />
 
       <div className='whiteCurtain fixed inset-0 z-100 bg-zinc-50' style={{ transform: 'translateY(100%)' }} />
       {/* グラデーション背景 */}

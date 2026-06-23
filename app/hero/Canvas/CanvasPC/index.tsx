@@ -1,8 +1,10 @@
 'use client';
 
+// React
+import { Suspense } from 'react';
 // THREE
 import { Canvas } from '@react-three/fiber';
-import { Environment } from '@react-three/drei';
+import { Environment, Preload } from '@react-three/drei';
 import type { Group } from 'three';
 // コンポーネント
 import { PC } from './Model';
@@ -43,7 +45,11 @@ export function CanvasPC({
           shadow-camera-far={50}
         />
 
-        <PC groupRef={ref} hoveredKey={hoveredKey} onReady={onReady} />
+        <Suspense fallback={null}>
+          <PC groupRef={ref} hoveredKey={hoveredKey} onReady={onReady} />
+          {/* ローディング中にシェーダ/テクスチャをGPUへ焼いておく */}
+          <Preload all />
+        </Suspense>
 
         {/* Postprocessing（Bloom 弱め） */}
         <EffectComposer>
