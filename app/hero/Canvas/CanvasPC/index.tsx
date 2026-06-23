@@ -8,12 +8,14 @@ import type { Group } from 'three';
 import { PC } from './Model';
 import { Bloom, EffectComposer, N8AO} from '@react-three/postprocessing';
 
-export function CanvasPC({ 
+export function CanvasPC({
   ref,
-  hoveredKey
-}: { 
+  hoveredKey,
+  onReady
+}: {
   ref?: React.RefObject<Group | null>;
-  hoveredKey: string | null
+  hoveredKey: string | null;
+  onReady?: () => void;
 }) {
   return (
     <div className='fixed inset-0 z-30 pointer-events-none'>
@@ -41,7 +43,7 @@ export function CanvasPC({
           shadow-camera-far={50}
         />
 
-        <PC groupRef={ref} hoveredKey={hoveredKey} />
+        <PC groupRef={ref} hoveredKey={hoveredKey} onReady={onReady} />
 
         {/* Postprocessing（Bloom 弱め） */}
         <EffectComposer>

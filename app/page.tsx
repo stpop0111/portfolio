@@ -8,7 +8,7 @@ import type { Group } from 'three';
 import { useEnvironment, useGLTF } from '@react-three/drei';
 import { useProgress } from '@react-three/drei';
 // React
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 // コンポーネントのインポート
 import { Curtains } from './hero/Curtains';
@@ -44,6 +44,9 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   );
   const [showCurtain, setShowCurtain] = useState<boolean>(true);
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  /* PCモデル(canvasPCRef)のマウント完了フラグ。カーテンアップの発火条件に使う */
+  const [modelReady, setModelReady] = useState<boolean>(false);
+  const handleModelReady = useCallback(() => setModelReady(true), []);
 
   const keyCaps = [
     { label: 'ABOUT ME', x: -3, color: '#222222', textColor: '#222', path: '/about' },
@@ -178,7 +181,7 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
           ); // グラデーションが下から広がる
       }
     },
-    { dependencies: [phase, skipIntro] },
+    { dependencies: [phase, skipIntro, modelReady] },
   );
 
   // ------------------------
@@ -193,7 +196,7 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
       />
 
       {/* PCモデルの配置 */}
-      <CanvasPC ref={canvasPCRef} hoveredKey={hoveredKey} />
+      <CanvasPC ref={canvasPCRef} hoveredKey={hoveredKey} onReady={handleModelReady} />
 
       {/* グラデーション（PCモデルより前に） */}
       <div
@@ -224,7 +227,7 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
 
       {/* タイトルテキスト */}
       <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} hideLoading={skipIntro} />
-      <CanvasTitle ref={canvasTitleRef} phase={phase} />
+      <CanvasTitle ref={canvasTitleRef} phase={phase} skipIntro={skipIntro} />
 
       {/* ページリロードボタン */}
       {isRefreshing && phase === 'loading' && (

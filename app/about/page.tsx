@@ -16,11 +16,15 @@ import { useLenis } from 'lenis/react';
 // Blob生成
 import * as blobs from 'blobs/v2';
 import { SplitText } from '../_components/splitText';
+// カーテン（Home と共用。色順・方向は逆にして使う）
+import { Curtains } from '../hero/Curtains';
 
 export default function About() {
   const [phase, setPhase] = useState<'curtain' | 'title' | 'reveal'>('curtain');
   const [scrollLocked, setScrollLocked] = useState<boolean>(true);
   const [showScrollHint, setShowScrollHint] = useState<boolean>(false);
+  /* Home への退場カーテン（blob scrub 完了で出現させる） */
+  const [showCurtain, setShowCurtain] = useState<boolean>(false);
   const lenis = useLenis();
 
   /* lenisのスクロール制御&CSSにてネイティブスクロールの制御 */
@@ -196,11 +200,30 @@ export default function About() {
           start: '1% top', // sticky engage 時から
           end: 'bottom bottom', // 300vh の scrub
           scrub: true,
-          onLeave: () => router.push('/?from=about'),
+          onLeave: () => setShowCurtain(true), // scrub 完了 → カーテン出現
         },
       },
     );
   }, []);
+
+  /* 退場カーテン：上から降りてきて覆い切る（最後は zinc-700）→ 完了で遷移 */
+  useGSAP(
+    () => {
+      if (!showCurtain) return;
+      gsap.fromTo(
+        '.curtain',
+        { y: '-100%' },
+        {
+          y: '0%',
+          duration: 0.5,
+          stagger: { each: 0.08, from: 'end' },
+          ease: 'power2.inOut',
+          onComplete: () => router.push('/?from=about'),
+        },
+      );
+    },
+    { dependencies: [showCurtain] },
+  );
 
   return (
     <main>
@@ -313,6 +336,12 @@ export default function About() {
 
       {/* z-10: クリーム幕②（兼 背景）下から上がってきて停止 → そのまま背景 */}
       <section className='aboutBg fixed inset-0 z-10' style={{ backgroundColor: '#FAF3E1' }} />
+
+      {/* 退場カーテン：覆い切ると最前面(zIndex 90)= zinc-700 が見える = Home の被覆状態と一致 */}
+      <Curtains
+        show={showCurtain}
+        colors={['bg-zinc-700', 'bg-zinc-600', 'bg-zinc-500', 'bg-zinc-400', 'bg-zinc-300', 'bg-zinc-200']}
+      />
 
       <Scrollhint showScrollHint={showScrollHint} />
     </main>

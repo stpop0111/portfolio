@@ -7,7 +7,7 @@ import { Color, DoubleSide, MeshStandardMaterial, type Group, type Mesh } from '
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
-export function TitleScene({ phase }: { phase: string }) {
+export function TitleScene({ phase, skipIntro = false }: { phase: string; skipIntro?: boolean }) {
   const { nodes } = useGLTF('/models/model__letter-f.glb');
   const transmissionBackground = useMemo(() => new Color('#fafafa'), []);
   const geometry = useMemo(() => {
@@ -31,6 +31,10 @@ export function TitleScene({ phase }: { phase: string }) {
       .to(text3DRef.current!.scale, { x: 2, y: 2, z: 2, duration: 1.4, ease: 'back.out(2)' }, '<');
   }
   if (phase === 'hero') {
+    // About から復帰（skipIntro）時は初期 props と onSync で最終状態にしているため、
+    // ここでの色アニメは不要。
+    if (skipIntro) return;
+
     const tl = gsap.timeline();
     tl.to((textFrontRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<')
       .to((textBackRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<');
@@ -75,11 +79,12 @@ export function TitleScene({ phase }: { phase: string }) {
           anchorX='right'
           anchorY='middle'
           material-transparent
-          material-opacity={0}
+          material-opacity={skipIntro ? 1 : 0}
+          onSync={skipIntro ? (t: Mesh) => (t.material as MeshStandardMaterial).color.setRGB(0.1, 0.1, 0.1) : undefined}
         >
           Port
         </Text>
-        <mesh ref={text3DRef} geometry={geometry} position={[0, 0, 0]} scale={0}>
+        <mesh ref={text3DRef} geometry={geometry} position={[0, 0, 0]} scale={skipIntro ? 2 : 0}>
           <MeshTransmissionMaterial
             samples={12}
             resolution={1024}
@@ -108,7 +113,8 @@ export function TitleScene({ phase }: { phase: string }) {
           anchorX='left'
           anchorY='middle'
           material-transparent
-          material-opacity={0}
+          material-opacity={skipIntro ? 1 : 0}
+          onSync={skipIntro ? (t: Mesh) => (t.material as MeshStandardMaterial).color.setRGB(0.1, 0.1, 0.1) : undefined}
         >
           olio
         </Text>
