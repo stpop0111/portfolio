@@ -7,7 +7,7 @@ import { Color, DoubleSide, MeshStandardMaterial, type Group, type Mesh } from '
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
-export function TitleScene({ phase }: { phase: string }) {
+export function TitleScene({ phase, skipIntro = false }: { phase: string; skipIntro?: boolean }) {
   const { nodes } = useGLTF('/models/model__letter-f.glb');
   const transmissionBackground = useMemo(() => new Color('#fafafa'), []);
   const geometry = useMemo(() => {
@@ -31,12 +31,17 @@ export function TitleScene({ phase }: { phase: string }) {
       .to(text3DRef.current!.scale, { x: 2, y: 2, z: 2, duration: 1.4, ease: 'back.out(2)' }, '<');
   }
   if (phase === 'hero') {
-    // skipIntro（About から復帰）で 'title' フェーズを経ず直接 'hero' に入る場合、
-    // 出現アニメ（opacity / scale）が走っていないので表示状態を保証する。
-    // 通常フローでは既に同じ値なので副作用なし。
-    gsap.set(textFrontRef.current!.material, { opacity: 1 });
-    gsap.set(textBackRef.current!.material, { opacity: 1 });
-    gsap.set(text3DRef.current!.scale, { x: 2, y: 2, z: 2 });
+    if (skipIntro) {
+      // About から復帰：'title' フェーズを経ず直接 'hero' に入るため、
+      // 出現アニメ（opacity/scale）も色アニメも走っていない。
+      // カーテンアップ後の最終状態（表示・黒ベース）を即座に固定する。
+      gsap.set(textFrontRef.current!.material, { opacity: 1 });
+      gsap.set(textBackRef.current!.material, { opacity: 1 });
+      gsap.set(text3DRef.current!.scale, { x: 2, y: 2, z: 2 });
+      gsap.set((textFrontRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1 });
+      gsap.set((textBackRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1 });
+      return;
+    }
 
     const tl = gsap.timeline();
     tl.to((textFrontRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<')

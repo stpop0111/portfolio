@@ -206,15 +206,15 @@ export default function About() {
     );
   }, []);
 
-  /* 退場カーテン：覆った状態 → 下へ抜けて消える（Home の逆方向）→ 完了で遷移 */
+  /* 退場カーテン：上から降りてきて覆い切る（最後は zinc-700）→ 完了で遷移 */
   useGSAP(
     () => {
       if (!showCurtain) return;
       gsap.fromTo(
         '.curtain',
-        { y: '0%' },
+        { y: '-100%' },
         {
-          y: '100%',
+          y: '0%',
           duration: 0.5,
           stagger: 0.08,
           ease: 'power2.inOut',
@@ -337,10 +337,10 @@ export default function About() {
       {/* z-10: クリーム幕②（兼 背景）下から上がってきて停止 → そのまま背景 */}
       <section className='aboutBg fixed inset-0 z-10' style={{ backgroundColor: '#FAF3E1' }} />
 
-      {/* 退場カーテン（Home とは色順・方向を逆に） */}
+      {/* 退場カーテン：覆い切ると最前面(zIndex 90)= zinc-700 が見える = Home の被覆状態と一致 */}
       <Curtains
         show={showCurtain}
-        colors={['bg-zinc-200', 'bg-zinc-300', 'bg-zinc-400', 'bg-zinc-500', 'bg-zinc-600', 'bg-zinc-700']}
+        colors={['bg-zinc-700', 'bg-zinc-600', 'bg-zinc-500', 'bg-zinc-400', 'bg-zinc-300', 'bg-zinc-200']}
       />
 
       <Scrollhint showScrollHint={showScrollHint} />

@@ -227,7 +227,7 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
 
       {/* タイトルテキスト */}
       <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} hideLoading={skipIntro} />
-      <CanvasTitle ref={canvasTitleRef} phase={phase} />
+      <CanvasTitle ref={canvasTitleRef} phase={phase} skipIntro={skipIntro} />
 
       {/* ページリロードボタン */}
       {isRefreshing && phase === 'loading' && (
