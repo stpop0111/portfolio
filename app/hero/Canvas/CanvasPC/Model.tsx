@@ -204,7 +204,7 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
     const targetCamY = CAMERA_BASE_Y + pointerRef.current.y * CAMERA_FOLLOW_Y;
 
     state.camera.position.x += (targetCamX - state.camera.position.x) * cameraLerp;
-    state.camera.position.y -= (targetCamY - state.camera.position.y) * cameraLerp;
+    state.camera.position.y += (targetCamY - state.camera.position.y) * cameraLerp;
 
     state.camera.lookAt(0, 0.6, 0);
   });
