@@ -145,6 +145,15 @@ export default function Home() {
     () => {
       if (phase === 'hero') {
         if (!canvasPCRef.current || !canvasNavKeyRef.current || !canvasTitleRef.current) return;
+
+        /* About から戻ってきた場合: カーテン無しで最終状態を即適用 */
+        if (skipIntro) {
+          setShowCurtain(false);
+          gsap.set(canvasTitleRef.current, { y: '-120%' });
+          gsap.set('.gradientOverlay', { opacity: 1, y: 0 });
+          return;
+        }
+
         const tl = gsap.timeline();
         tl.to('.curtain', {
           y: '-100%',
@@ -164,7 +173,7 @@ export default function Home() {
           ); // グラデーションが下から広がる
       }
     },
-    { dependencies: [phase] },
+    { dependencies: [phase, skipIntro] },
   );
 
   // ------------------------
