@@ -22,7 +22,7 @@ function HomeContent() {
   // About から戻ってきた場合は loading/changing/title を飛ばして hero から開始
   const searchParams = useSearchParams();
   const skipIntro = searchParams.get('from') === 'about';
-  const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>(skipIntro ? 'hero' : 'loading'); // アニメーションのフェーズ管理
+  const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>('loading'); // アニメーションのフェーズ管理
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
   const keyCaps = [
@@ -65,13 +65,20 @@ function HomeContent() {
 
   const { progress, total } = useProgress();
   useEffect(() => {
-    if (phase === 'loading' && progress === 100 && total > 0) {
+    if (!skipIntro && phase === 'loading' && progress === 100 && total > 0) {
       const timer = setTimeout(() => {
         setPhase('changing');
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [progress, total, phase]);
+  }, [progress, total, phase, skipIntro]);
+
+  /* About から戻ってきた場合: モデル読込完了を待って一気に hero へ（イントロ非表示） */
+  useEffect(() => {
+    if (skipIntro && phase === 'loading' && progress === 100 && total > 0) {
+      setPhase('hero');
+    }
+  }, [skipIntro, phase, progress, total]);
 
   // ----------------------------------------
   // リロードボタン
@@ -134,6 +141,7 @@ function HomeContent() {
   useGSAP(
     () => {
       if (phase === 'hero') {
+        if (!canvasPCRef.current || !canvasNavKeyRef.current || !canvasTitleRef.current) return;
         const tl = gsap.timeline();
         tl.to('.curtain', {
           y: '-100%',
@@ -186,7 +194,7 @@ function HomeContent() {
       />
 
       {/* タイトルテキスト */}
-      <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} />
+      <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} hideLoading={skipIntro} />
       <CanvasTitle ref={canvasTitleRef} phase={phase} />
 
       {/* ページリロードボタン */}
