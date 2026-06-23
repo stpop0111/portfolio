@@ -216,7 +216,7 @@ export default function About() {
         {
           y: '0%',
           duration: 0.5,
-          stagger: 0.08,
+          stagger: { each: 0.08, from: 'end' },
           ease: 'power2.inOut',
           onComplete: () => router.push('/?from=about'),
         },
