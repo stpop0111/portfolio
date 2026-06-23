@@ -3,7 +3,7 @@
 import { Canvas } from '@react-three/fiber';
 import { KeyCap } from './Model';
 import { Suspense } from 'react';
-import { Environment } from '@react-three/drei';
+import { Environment, Preload } from '@react-three/drei';
 
 type KeyCapType = { label: string; x: number; color: string; textColor: string; path: string };
 
@@ -27,6 +27,8 @@ export function CanvasNavKey({
           {keyCaps.map((keyCap, i) => (
             <KeyCap key={i} keyCap={keyCap} onClick={onKeyCapClick} onHover={onKeyCapHover} />
           ))}
+          {/* ローディング中にシェーダ/テクスチャをGPUへ焼いておく */}
+          <Preload all />
         </Suspense>
       </Canvas>
     </div>
