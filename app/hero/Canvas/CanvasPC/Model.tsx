@@ -197,7 +197,7 @@ export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group 
     const CAMERA_BASE_X = 3;
     const CAMERA_BASE_Y = -0.4;
     const CAMERA_FOLLOW_X = 1.5;
-    const CAMERA_FOLLOW_Y = 0.5;
+    const CAMERA_FOLLOW_Y = -0.5;
     const cameraLerp = 0.05;
 
     const targetCamX = CAMERA_BASE_X + pointerRef.current.x * CAMERA_FOLLOW_X;

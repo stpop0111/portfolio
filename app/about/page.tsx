@@ -152,11 +152,14 @@ export default function About() {
     };
   }, [lenis]);
 
-  /* contactSection の高さ変更を ScrollTrigger に反映（次フレームで） */
+  /* contactSection の高さ変更を Lenis / ScrollTrigger に反映（次フレームで） */
   useEffect(() => {
-    const id = requestAnimationFrame(() => ScrollTrigger.refresh());
+    const id = requestAnimationFrame(() => {
+      lenis?.resize();
+      ScrollTrigger.refresh();
+    });
     return () => cancelAnimationFrame(id);
-  }, [endBlobAnimation]);
+  }, [endBlobAnimation, lenis]);
 
   /* 1. エントランス：blob + テキストが一度だけ表示される */
   useGSAP(() => {
