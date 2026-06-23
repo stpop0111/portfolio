@@ -10,7 +10,7 @@ export function HeroText({
   progressCount: number;
 }) {
   return (
-    <div ref={ref} className='fixed inset-0 z-50 pointer-events-none flex items-center justify-center'>
+    <div ref={ref} className='fixed inset-0 z-95 pointer-events-none flex items-center justify-center'>
       {/* ローディング */}
       {(phase === 'loading' || phase === 'changing') && (
         <div className='loadingBlock'>
