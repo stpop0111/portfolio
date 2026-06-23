@@ -31,7 +31,7 @@ export default function Page() {
 
   if (!mounted) {
     // マウント前は白いカバーだけ（一瞬の splash）
-    return <div className='fixed inset-0 bg-zinc-50 z-[9999]' />;
+    return <div className='fixed inset-0 bg-zinc-50 z-9999' />;
   }
 
   return <Home skipIntro={skipIntro} />;
@@ -40,9 +40,9 @@ export default function Page() {
 // 内側：本物の Home（skipIntro を props で受け取る）
 function Home({ skipIntro }: { skipIntro: boolean }) {
   const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>(
-    skipIntro ? 'hero' : 'loading'
+    skipIntro ? 'hero' : 'loading', // ← skipIntro 時は最初から 'hero'
   );
-  const [showCurtain, setShowCurtain] = useState<boolean>(!skipIntro);
+  const [showCurtain, setShowCurtain] = useState<boolean>(true);
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
   const keyCaps = [
@@ -93,15 +93,6 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
     }
   }, [progress, total, phase, skipIntro]);
 
-  /* About から戻ってきた場合: モデル読込完了を待って一気に hero へ（イントロ非表示） */
-  useEffect(() => {
-    if (skipIntro && phase === 'loading' && progress === 100 && total > 0) {
-      const timer = setTimeout(() => {
-        setPhase('hero');
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [skipIntro, phase, progress, total]);
 
   // ----------------------------------------
   // リロードボタン
@@ -126,8 +117,11 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
       if (phase === 'loading') {
         const tl = gsap.timeline({ repeat: -1 });
         gsap.utils.toArray<Element>('.loading').forEach((char) => {
-          tl.to(char, { y: -2, duration: 0.1, ease: 'power2.out' }, '-=0.2')
-            .to(char, { y: 0, duration: 0.15, ease: 'power2.in', });
+          tl.to(char, { y: -2, duration: 0.1, ease: 'power2.out' }, '-=0.2').to(char, {
+            y: 0,
+            duration: 0.15,
+            ease: 'power2.in',
+          });
         });
       }
       /* アニメーション : タイトルの表示切り替え */
@@ -165,14 +159,6 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
       if (phase === 'hero') {
         if (!canvasPCRef.current || !canvasNavKeyRef.current || !canvasTitleRef.current) return;
 
-        /* About から戻ってきた場合: カーテン無しで最終状態を即適用 */
-        if (skipIntro) {
-          setShowCurtain(false);
-          gsap.set(canvasTitleRef.current, { y: '-120%' });
-          gsap.set('.gradientOverlay', { opacity: 1, y: 0 });
-          return;
-        }
-
         const tl = gsap.timeline();
         tl.to('.curtain', {
           y: '-100%',
@@ -201,17 +187,29 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   return (
     <main className='flex flex-1 items-center justify-center bg-zinc-50 text-zinc-50'>
       {/* 幕 */}
-      <Curtains show={showCurtain} colors={['bg-zinc-700', 'bg-zinc-600', 'bg-zinc-500', 'bg-zinc-400', 'bg-zinc-300', 'bg-zinc-200']} />
+      <Curtains
+        show={showCurtain}
+        colors={['bg-zinc-700', 'bg-zinc-600', 'bg-zinc-500', 'bg-zinc-400', 'bg-zinc-300', 'bg-zinc-200']}
+      />
 
       {/* PCモデルの配置 */}
       <CanvasPC ref={canvasPCRef} hoveredKey={hoveredKey} />
 
       {/* グラデーション（PCモデルより前に） */}
-      <div className='gradientOverlay h-50vh[] fixed inset-0 pointer-events-none'
-        style={{ background: 'linear-gradient(0deg,rgba(250, 243, 225, 1) 0%, rgba(255, 255, 225, 0) 30%)', zIndex: 30, }}
+      <div
+        className='gradientOverlay h-50vh[] fixed inset-0 pointer-events-none'
+        style={{
+          background: 'linear-gradient(0deg,rgba(250, 243, 225, 1) 0%, rgba(255, 255, 225, 0) 30%)',
+          zIndex: 30,
+        }}
       />
       {phase === 'hero' && (
-        <CanvasNavKey ref={canvasNavKeyRef} keyCaps={keyCaps} onKeyCapClick={handleClick} onKeyCapHover={setHoveredKey} />
+        <CanvasNavKey
+          ref={canvasNavKeyRef}
+          keyCaps={keyCaps}
+          onKeyCapClick={handleClick}
+          onKeyCapHover={setHoveredKey}
+        />
       )}
 
       <div className='whiteCurtain fixed inset-0 z-100 bg-zinc-50' style={{ transform: 'translateY(100%)' }} />

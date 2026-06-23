@@ -11,7 +11,6 @@ import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 // コンポーネント
 import { CanvasTitle } from './Canvas/CanvasTitle';
-import { Curtains } from '../hero/Curtains';
 // Lenis
 import { useLenis } from 'lenis/react';
 // Blob生成
@@ -137,9 +136,8 @@ export default function About() {
     tl.to(contactBlobRef.current, { morphSVG: BASE_PATH, duration: 4, ease: 'sine.inOut' });
   }, []);
 
-  /* 最下部までのスクロールでカーテン＋Home遷移 */
+  /* 最下部までのスクロールでHome遷移 */
   const router = useRouter();
-  const [showLoopBackCurtain, setShowLoopBackCurtain] = useState<boolean>(false);
   /* blob の出現アニメーションが終わったかどうか */
   const [endBlobAnimation, setEndBlobAnimation] = useState<boolean>(false);
 
@@ -198,31 +196,11 @@ export default function About() {
           start: '1% top', // sticky engage 時から
           end: 'bottom bottom', // 300vh の scrub
           scrub: true,
-          onLeave: () => setShowLoopBackCurtain(true), // ③ カーテン発火
+          onLeave: () => router.push('/?from=about'),
         },
       },
     );
   }, []);
-
-  useGSAP(() => {
-    if (!showLoopBackCurtain) return;
-
-    gsap.fromTo(
-      '.curtain',
-      { y: '100%' },
-      {
-        y: '0%',
-        duration: 0.5,
-        stagger: {
-          from: 'end',
-          each: 0.08
-        },
-        ease: 'power2.inOut',
-        // カーテンが下りきったら home へ（イントロ省略の合図付き）
-        onComplete: () => router.push('/?from=about'),
-      },
-    );
-  }, [showLoopBackCurtain]);
 
   return (
     <main>
@@ -337,11 +315,6 @@ export default function About() {
       <section className='aboutBg fixed inset-0 z-10' style={{ backgroundColor: '#FAF3E1' }} />
 
       <Scrollhint showScrollHint={showScrollHint} />
-
-      <Curtains
-        show={showLoopBackCurtain}
-        colors={['bg-zinc-200', 'bg-zinc-300', 'bg-zinc-400', 'bg-zinc-500', 'bg-zinc-600', 'bg-zinc-700']}
-      />
     </main>
   );
 }
