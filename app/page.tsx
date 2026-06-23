@@ -200,7 +200,7 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
 
       {/* グラデーション（PCモデルより前に） */}
       <div
-        className='gradientOverlay h-50vh[] fixed inset-0 pointer-events-none'
+        className='gradientOverlay h-50vh fixed inset-0 pointer-events-none'
         style={{
           background: 'linear-gradient(0deg,rgba(250, 243, 225, 1) 0%, rgba(255, 255, 225, 0) 30%)',
           zIndex: 30,
