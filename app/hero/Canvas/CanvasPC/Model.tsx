@@ -5,10 +5,23 @@ import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { CanvasTexture, Color, DoubleSide, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 
-export function PC({ groupRef, hoveredKey }: { groupRef?: React.RefObject<Group | null>; hoveredKey: string | null }) {
+export function PC({
+  groupRef,
+  hoveredKey,
+  onReady,
+}: {
+  groupRef?: React.RefObject<Group | null>;
+  hoveredKey: string | null;
+  onReady?: () => void;
+}) {
   /* パソコン3Dモデル */
   const { scene, nodes } = useGLTF('/models/model__pc.glb');
   const monitorRef = useRef<Group | null>(null);
+
+  /* group がマウント（= モデル読み込み完了）したら親に通知 */
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
 
   useEffect(() => {
     const monitor = nodes.monitor as Group;
