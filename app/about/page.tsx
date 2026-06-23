@@ -140,6 +140,8 @@ export default function About() {
   /* 最下部までのスクロールでカーテン＋Home遷移 */
   const router = useRouter();
   const [showLoopBackCurtain, setShowLoopBackCurtain] = useState<boolean>(false);
+  /* blob の出現アニメーションが終わったかどうか */
+  const [endBlobAnimation, setEndBlobAnimation] = useState<boolean>(false);
 
   /* 1. エントランス：blob + テキストが一度だけ表示される */
   useGSAP(() => {
@@ -149,6 +151,7 @@ export default function About() {
         start: 'top 40%',
         // scrub 無し、end 無し → 一度だけ再生
       },
+      onComplete: () => setEndBlobAnimation(true),
     });
 
     tl.fromTo(
@@ -286,7 +289,7 @@ export default function About() {
       </section>
 
       {/* コンタクト */}
-      <section className='contactSection relative z-60 h-[400vh]'>
+      <section className={`contactSection relative z-60 ${endBlobAnimation ? 'h-[300vh]' : 'h-[100vh]'}`}>
         <div className='sticky top-0 h-screen flex items-center justify-center'>
           <a href='mailto:stpop0111@gmail.com' className='flex items-center justify-center group'>
             <svg viewBox='0 0 716 445' className='absolute w-[80vw] max-w-180 h-auto overflow-visible'>
