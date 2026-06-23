@@ -190,12 +190,12 @@ export default function About() {
       contactBlobRef.current,
       { scale: 1, transformOrigin: 'center center' }, // 明示的に from: 1
       {
-        scale: 3,
+        scale: 4,
         transformOrigin: 'center center',
         ease: 'none',
         scrollTrigger: {
           trigger: '.contactSection',
-          start: '20% top', // sticky engage 時から
+          start: '1% top', // sticky engage 時から
           end: 'bottom bottom', // 300vh の scrub
           scrub: true,
           onLeave: () => setShowLoopBackCurtain(true), // ③ カーテン発火

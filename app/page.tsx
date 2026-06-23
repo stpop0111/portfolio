@@ -18,14 +18,31 @@ import { CanvasPC } from './hero/Canvas/CanvasPC';
 import { CanvasNavKey } from './hero/Canvas/CanvasKey';
 import { CanvasTitle } from './hero/Canvas/CanvasTitle';
 
-export default function Home() {
-  // About から戻ってきた場合は loading/changing/title を飛ばして hero から開始
+// 外側コンポーネント：マウント判定だけする
+export default function Page() {
+  const [mounted, setMounted] = useState(false);
   const [skipIntro, setSkipIntro] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('from') === 'about') setSkipIntro(true);
+    setSkipIntro(params.get('from') === 'about');
+    setMounted(true);
   }, []);
-  const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>('loading'); // アニメーションのフェーズ管理
+
+  if (!mounted) {
+    // マウント前は白いカバーだけ（一瞬の splash）
+    return <div className='fixed inset-0 bg-zinc-50 z-[9999]' />;
+  }
+
+  return <Home skipIntro={skipIntro} />;
+}
+
+// 内側：本物の Home（skipIntro を props で受け取る）
+function Home({ skipIntro }: { skipIntro: boolean }) {
+  const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>(
+    skipIntro ? 'hero' : 'loading'
+  );
+  const [showCurtain, setShowCurtain] = useState<boolean>(!skipIntro);
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
   const keyCaps = [
@@ -79,7 +96,10 @@ export default function Home() {
   /* About から戻ってきた場合: モデル読込完了を待って一気に hero へ（イントロ非表示） */
   useEffect(() => {
     if (skipIntro && phase === 'loading' && progress === 100 && total > 0) {
-      setPhase('hero');
+      const timer = setTimeout(() => {
+        setPhase('hero');
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [skipIntro, phase, progress, total]);
 
@@ -131,7 +151,6 @@ export default function Home() {
   const canvasPCRef = useRef<Group>(null);
   const canvasNavKeyRef = useRef<HTMLDivElement>(null);
   const canvasTitleRef = useRef<HTMLDivElement>(null);
-  const [showCurtain, setShowCurtain] = useState<boolean>(true);
 
   /* title -> hero : タイトル画面に遷移してから*/
   useEffect(() => {
