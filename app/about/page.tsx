@@ -143,6 +143,11 @@ export default function About() {
   /* blob の出現アニメーションが終わったかどうか */
   const [endBlobAnimation, setEndBlobAnimation] = useState<boolean>(false);
 
+  /* contactSection の高さ変更を ScrollTrigger に反映 */
+  useEffect(() => {
+    ScrollTrigger.refresh();
+  }, [endBlobAnimation]);
+
   /* 1. エントランス：blob + テキストが一度だけ表示される */
   useGSAP(() => {
     const tl = gsap.timeline({
