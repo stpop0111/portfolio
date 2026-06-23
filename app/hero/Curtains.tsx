@@ -9,7 +9,7 @@ export function Curtains({ show, colors }: { show: boolean; colors: string[] }) 
         return (
           <div
             key={i}
-            className={`${cls} curtain fixed inset-0`}
+            className={`${cls} curtain fixed inset-x-0 top-0 h-[110vh]`}
             style={{
               zIndex: 90 - i,
               borderBottomLeftRadius: radius,
