@@ -8,8 +8,8 @@ import type { Group } from 'three';
 import { useEnvironment, useGLTF } from '@react-three/drei';
 import { useProgress } from '@react-three/drei';
 // React
-import { useRef, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRef, useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 // コンポーネントのインポート
 import { Curtains } from './hero/Curtains';
 import { ReloadButton } from './hero/ReloadButton';
@@ -18,7 +18,10 @@ import { CanvasPC } from './hero/Canvas/CanvasPC';
 import { CanvasNavKey } from './hero/Canvas/CanvasKey';
 import { CanvasTitle } from './hero/Canvas/CanvasTitle';
 
-export default function Home() {
+function HomeContent() {
+  // About から戻ってきた場合は loading/changing/title を飛ばして hero から開始
+  const searchParams = useSearchParams();
+  const skipIntro = searchParams.get('from') === 'about';
   const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>('loading'); // アニメーションのフェーズ管理
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
@@ -62,13 +65,20 @@ export default function Home() {
 
   const { progress, total } = useProgress();
   useEffect(() => {
-    if (phase === 'loading' && progress === 100 && total > 0) {
+    if (!skipIntro && phase === 'loading' && progress === 100 && total > 0) {
       const timer = setTimeout(() => {
         setPhase('changing');
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [progress, total, phase]);
+  }, [progress, total, phase, skipIntro]);
+
+  /* About から戻ってきた場合: モデル読込完了を待って一気に hero へ（イントロ非表示） */
+  useEffect(() => {
+    if (skipIntro && phase === 'loading' && progress === 100 && total > 0) {
+      setPhase('hero');
+    }
+  }, [skipIntro, phase, progress, total]);
 
   // ----------------------------------------
   // リロードボタン
@@ -131,6 +141,7 @@ export default function Home() {
   useGSAP(
     () => {
       if (phase === 'hero') {
+        if (!canvasPCRef.current || !canvasNavKeyRef.current || !canvasTitleRef.current) return;
         const tl = gsap.timeline();
         tl.to('.curtain', {
           y: '-100%',
@@ -183,7 +194,7 @@ export default function Home() {
       />
 
       {/* タイトルテキスト */}
-      <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} />
+      <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} hideLoading={skipIntro} />
       <CanvasTitle ref={canvasTitleRef} phase={phase} />
 
       {/* ページリロードボタン */}
@@ -193,5 +204,14 @@ export default function Home() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function Home() {
+  // useSearchParams は Suspense 境界が必要
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }
