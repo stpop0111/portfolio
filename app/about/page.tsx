@@ -218,6 +218,8 @@ export default function About() {
           each: 0.08
         },
         ease: 'power2.inOut',
+        // カーテンが下りきったら home へ（イントロ省略の合図付き）
+        onComplete: () => router.push('/?from=about'),
       },
     );
   }, [showLoopBackCurtain]);

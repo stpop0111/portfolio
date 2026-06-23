@@ -8,8 +8,8 @@ import type { Group } from 'three';
 import { useEnvironment, useGLTF } from '@react-three/drei';
 import { useProgress } from '@react-three/drei';
 // React
-import { useRef, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRef, useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 // コンポーネントのインポート
 import { Curtains } from './hero/Curtains';
 import { ReloadButton } from './hero/ReloadButton';
@@ -18,8 +18,11 @@ import { CanvasPC } from './hero/Canvas/CanvasPC';
 import { CanvasNavKey } from './hero/Canvas/CanvasKey';
 import { CanvasTitle } from './hero/Canvas/CanvasTitle';
 
-export default function Home() {
-  const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>('loading'); // アニメーションのフェーズ管理
+function HomeContent() {
+  // About から戻ってきた場合は loading/changing/title を飛ばして hero から開始
+  const searchParams = useSearchParams();
+  const skipIntro = searchParams.get('from') === 'about';
+  const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>(skipIntro ? 'hero' : 'loading'); // アニメーションのフェーズ管理
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
   const keyCaps = [
@@ -193,5 +196,14 @@ export default function Home() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function Home() {
+  // useSearchParams は Suspense 境界が必要
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }
