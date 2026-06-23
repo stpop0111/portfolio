@@ -143,9 +143,19 @@ export default function About() {
   /* blob の出現アニメーションが終わったかどうか */
   const [endBlobAnimation, setEndBlobAnimation] = useState<boolean>(false);
 
-  /* contactSection の高さ変更を ScrollTrigger に反映 */
+  /* Lenis のスクロールを ScrollTrigger に同期 */
   useEffect(() => {
-    ScrollTrigger.refresh();
+    if (!lenis) return;
+    lenis.on('scroll', ScrollTrigger.update);
+    return () => {
+      lenis.off('scroll', ScrollTrigger.update);
+    };
+  }, [lenis]);
+
+  /* contactSection の高さ変更を ScrollTrigger に反映（次フレームで） */
+  useEffect(() => {
+    const id = requestAnimationFrame(() => ScrollTrigger.refresh());
+    return () => cancelAnimationFrame(id);
   }, [endBlobAnimation]);
 
   /* 1. エントランス：blob + テキストが一度だけ表示される */
