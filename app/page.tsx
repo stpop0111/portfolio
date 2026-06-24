@@ -11,12 +11,12 @@ import { useProgress } from '@react-three/drei';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 // コンポーネントのインポート
-import { Curtains } from './hero/Curtains';
+import { Curtains } from './_components/Curtains';
 import { ReloadButton } from './hero/ReloadButton';
 import { HeroText } from './hero/HeroText';
 import { CanvasPC } from './hero/Canvas/CanvasPC';
 import { CanvasNavKey } from './hero/Canvas/CanvasKey';
-import { CanvasTitle } from './hero/Canvas/CanvasTitle';
+import { CanvasTitle } from './_components/CanvasTitle';
 
 // 外側コンポーネント：マウント判定だけする
 export default function Page() {
@@ -226,8 +226,25 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
 
       {/* タイトルテキスト */}
       <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} hideLoading={skipIntro} />
-      <CanvasTitle ref={canvasTitleRef} phase={phase} skipIntro={skipIntro} />
-
+      <CanvasTitle
+        ref={canvasTitleRef}
+        phase={phase}
+        skipIntro={skipIntro}
+        modelPath='/models/model__letter-f.glb'
+        modelName='letter_f'
+        bgColor='#fafafa'
+        preText={{ 
+          text: 'Port', 
+          position: [-0.2, 0, -0.5], 
+          anchorX: 'right' 
+        }}
+        postText={{ 
+          text: 'olio', 
+          position: [0.2, 0, -0.5], 
+          anchorX: 'left' 
+        }}
+        enableHeroColorChange    // ← phase='hero' で文字色変化
+      />
       {/* ページリロードボタン */}
       {isRefreshing && phase === 'loading' && (
         <div className='fixed z-50 bottom-8 left-1/2 -translate-x-1/2'>

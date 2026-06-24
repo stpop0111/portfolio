@@ -14,7 +14,7 @@ type TextConfig = {
   fontSize?: number;
 };
 
-type TitleSceneProps = {
+export type TitleSceneProps = {
   phase: string;
   skipIntro?: boolean;
 
@@ -32,6 +32,9 @@ type TitleSceneProps = {
 
   // hero phase で文字色変化させるか
   enableHeroColorChange?: boolean;
+
+  // テキストのグループ
+  groupRef?: React.RefObject<Group | null>;
 };
 
 export function TitleScene({
@@ -46,6 +49,7 @@ export function TitleScene({
   postText,
   textColor = '#fafafa',
   enableHeroColorChange = false,
+  groupRef
 }: TitleSceneProps) {
 
   /* 初期設定
@@ -58,7 +62,8 @@ export function TitleScene({
     cloned.computeVertexNormals();
     return cloned;
   }, [modelName, nodes]);
-  const groupRef = useRef<Group>(null);
+  const internalGroupRef = useRef<Group>(null);
+  const finalGroupRef = groupRef ?? internalGroupRef;
   const text3DRef = useRef<Mesh>(null);
   const textFrontRef = useRef<Mesh>(null);
   const textBackRef = useRef<Mesh>(null);
@@ -66,26 +71,35 @@ export function TitleScene({
 
   /* 表示アニメーション
   --------------------------------------- */
-  useGSAP( () => {
-      if (phase === 'title') {
-        const tl = gsap.timeline();
-        tl.to(textFrontRef.current!.material, { opacity: 1, duration: 1.4, ease: 'power2.out' })
-          .to(textBackRef.current!.material, { opacity: 1, duration: 1.4, ease: 'power2.out' }, '<')
-          .to(text3DRef.current!.scale, { x: 2, y: 2, z: 2, duration: 1.4, ease: 'back.out(2)' }, '<');
+  useGSAP(() => {
+    /* 【フェーズ：タイトル】テキストの表示 */
+    if (phase === 'title') {
+      const tl = gsap.timeline();
+      if (textFrontRef.current?.material) {
+        tl.to(textFrontRef.current.material, { opacity: 1, duration: 1.4, ease: 'power2.out' });
       }
-      if (phase === 'hero') {
-        if (skipIntro) return;
-        const tl = gsap.timeline();
-        tl.to((textFrontRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<', )
-          .to((textBackRef.current!.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<', );
+      if (textBackRef.current?.material) {
+        tl.to(textBackRef.current.material, { opacity: 1, duration: 1.4, ease: 'power2.out' }, '<');
       }
-    },
-    { dependencies: [phase] },
-  );
+      if (text3DRef.current) {
+        tl.to(text3DRef.current.scale, { x: modelScale, y: modelScale, z: modelScale, duration: 1.4, ease: 'back.out(2)' }, '<');
+      }
+    }
+    /* 【フェーズ：ヒーロー表示】テキストの色変更 */
+    if (phase === 'hero' && enableHeroColorChange && !skipIntro) {
+      const tl = gsap.timeline();
+      if (textFrontRef.current?.material) { 
+        tl.to((textFrontRef.current.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }); 
+      }
+      if (textBackRef.current?.material) { 
+        tl.to((textBackRef.current.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<'); 
+      }
+    }
+  }, { dependencies: [phase, skipIntro, enableHeroColorChange] });
 
   /* 浮遊アニメーション
   --------------------------------------- */
-  const float = {
+  const float = { // 浮遊オプション
     yPhase: 1.2,
     ySpeed: 0.82,
     yAmp: 0.1,
@@ -97,6 +111,7 @@ export function TitleScene({
     rotZAmp: 0.09,
   };
 
+  /* アニメーション */
   useFrame((_, delta) => {
     selfTimeRef.current += delta;
     const t = selfTimeRef.current;
@@ -112,22 +127,24 @@ export function TitleScene({
 
   return (
     <>
-      <group ref={groupRef}>
-        <Text
-          ref={textFrontRef}
-          font='/fonts/Urbanist-MediumItalic.ttf'
-          position={[-0.2, 0, -0.5]}
-          fontSize={1.6}
-          color='#fafafa'
-          anchorX='right'
-          anchorY='middle'
-          material-transparent
-          material-opacity={skipIntro ? 1 : 0}
-          onSync={skipIntro ? (t: Mesh) => (t.material as MeshStandardMaterial).color.setRGB(0.1, 0.1, 0.1) : undefined}
-        >
-          Port
-        </Text>
-        <mesh ref={text3DRef} geometry={geometry} position={[0, 0, 0]} scale={skipIntro ? 2 : 0}>
+      <group ref={finalGroupRef}>
+        {preText && (
+          <Text
+            ref={textFrontRef}
+            font='/fonts/Urbanist-MediumItalic.ttf'
+            position={preText.position}
+            fontSize={preText.fontSize ?? 1.6} 
+            color={textColor}
+            anchorX={preText.anchorX ?? 'right'} 
+            anchorY='middle'
+            material-transparent
+            material-opacity={skipIntro ? 1 : 0}
+            onSync={skipIntro ? (t: Mesh) => (t.material as MeshStandardMaterial).color.setRGB(0.1, 0.1, 0.1) : undefined}
+          >
+            {preText.text}
+          </Text>
+        )}
+        <mesh ref={text3DRef} geometry={geometry} position={modelPosition} scale={skipIntro ? modelScale : 0}>
           <MeshTransmissionMaterial
             samples={12}
             resolution={1024}
@@ -147,20 +164,22 @@ export function TitleScene({
             color='#ffffff'
           />
         </mesh>
-        <Text
-          ref={textBackRef}
-          font='/fonts/Urbanist-MediumItalic.ttf'
-          position={[0.2, 0, -0.5]}
-          fontSize={1.6}
-          color='#fafafa'
-          anchorX='left'
-          anchorY='middle'
-          material-transparent
-          material-opacity={skipIntro ? 1 : 0}
-          onSync={skipIntro ? (t: Mesh) => (t.material as MeshStandardMaterial).color.setRGB(0.1, 0.1, 0.1) : undefined}
-        >
-          olio
-        </Text>
+        {postText && (
+          <Text
+            ref={textBackRef}
+            font='/fonts/Urbanist-MediumItalic.ttf'
+            position={postText.position}
+            fontSize={postText.fontSize ?? 1.6} 
+            color={textColor}
+            anchorX={postText.anchorX ?? 'left'} 
+            anchorY='middle'
+            material-transparent
+            material-opacity={skipIntro ? 1 : 0}
+            onSync={skipIntro ? (t: Mesh) => (t.material as MeshStandardMaterial).color.setRGB(0.1, 0.1, 0.1) : undefined}
+          >
+            {postText.text}
+          </Text>
+        )}
       </group>
     </>
   );

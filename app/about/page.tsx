@@ -17,7 +17,7 @@ import { useLenis } from 'lenis/react';
 import * as blobs from 'blobs/v2';
 import { SplitText } from '../_components/splitText';
 // カーテン（Home と共用。色順・方向は逆にして使う）
-import { Curtains } from '../hero/Curtains';
+import { Curtains } from '../_components/Curtains';
 
 export default function About() {
   const [phase, setPhase] = useState<'curtain' | 'title' | 'reveal'>('curtain');
