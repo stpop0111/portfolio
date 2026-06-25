@@ -2,7 +2,7 @@
 
 import { useFrame } from '@react-three/fiber';
 import { MeshTransmissionMaterial, Text, useGLTF } from '@react-three/drei';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Color, DoubleSide, MeshStandardMaterial, type Group, type Mesh } from 'three';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -12,6 +12,7 @@ type TextConfig = {
   position: [number, number, number];
   anchorX?: 'left' | 'right';
   fontSize?: number;
+  textColor?: string;
 };
 
 export type TitleSceneProps = {
@@ -28,13 +29,15 @@ export type TitleSceneProps = {
   // テキスト
   preText?: TextConfig;
   postText?: TextConfig;
-  textColor?: string;
 
   // hero phase で文字色変化させるか
   enableHeroColorChange?: boolean;
 
   // テキストのグループ
   groupRef?: React.RefObject<Group | null>;
+  textFrontRef?: React.RefObject<Mesh | null>;
+  textBackRef?: React.RefObject<Mesh | null>;
+  transmissionBgRef?: React.MutableRefObject<Color | null>;
 };
 
 export function TitleScene({
@@ -47,15 +50,15 @@ export function TitleScene({
   bgColor = '#fafafa',
   preText,
   postText,
-  textColor = '#fafafa',
   enableHeroColorChange = false,
-  groupRef
+  groupRef,
+  textFrontRef,
+  textBackRef,
+  transmissionBgRef,
 }: TitleSceneProps) {
-
   /* 初期設定
   --------------------------------------- */
   const { nodes } = useGLTF(modelPath);
-  const transmissionBackground = useMemo(() => new Color(bgColor), [bgColor]);
   const geometry = useMemo(() => {
     const source = (nodes[modelName] as Mesh).geometry;
     const cloned = source.clone();
@@ -65,41 +68,70 @@ export function TitleScene({
   const internalGroupRef = useRef<Group>(null);
   const finalGroupRef = groupRef ?? internalGroupRef;
   const text3DRef = useRef<Mesh>(null);
-  const textFrontRef = useRef<Mesh>(null);
-  const textBackRef = useRef<Mesh>(null);
   const selfTimeRef = useRef(0);
+
+  // 既存の内部 refs と統合
+  const internalTextFrontRef = useRef<Mesh>(null);
+  const finalTextFrontRef = textFrontRef ?? internalTextFrontRef;
+
+  const internalTextBackRef = useRef<Mesh>(null);
+  const finalTextBackRef = textBackRef ?? internalTextBackRef;
+
+  // transmissionBackground は外部に公開
+  const transmissionBackground = useMemo(() => new Color(bgColor), [bgColor]);
+
+  // 外部 ref に Color インスタンスを保存
+  useEffect(() => {
+    if (transmissionBgRef) {
+      transmissionBgRef.current = transmissionBackground;
+    }
+  }, [transmissionBackground, transmissionBgRef]);
 
   /* 表示アニメーション
   --------------------------------------- */
-  useGSAP(() => {
-    /* 【フェーズ：タイトル】テキストの表示 */
-    if (phase === 'title') {
-      const tl = gsap.timeline();
-      if (textFrontRef.current?.material) {
-        tl.to(textFrontRef.current.material, { opacity: 1, duration: 1.4, ease: 'power2.out' });
+  useGSAP(
+    () => {
+      /* 【フェーズ：タイトル】テキストの表示 */
+      if (phase === 'title') {
+        const tl = gsap.timeline();
+        if (finalTextFrontRef.current?.material) {
+          tl.to(finalTextFrontRef.current.material, { opacity: 1, duration: 1.4, ease: 'power2.out' });
+        }
+        if (finalTextBackRef.current?.material) {
+          tl.to(finalTextBackRef.current.material, { opacity: 1, duration: 1.4, ease: 'power2.out' }, '<');
+        }
+        if (text3DRef.current) {
+          tl.to( text3DRef.current.scale, { x: modelScale, y: modelScale, z: modelScale, duration: 1.4, ease: 'back.out(2)' }, '<');
+        }
       }
-      if (textBackRef.current?.material) {
-        tl.to(textBackRef.current.material, { opacity: 1, duration: 1.4, ease: 'power2.out' }, '<');
+      /* 【フェーズ：ヒーロー表示】テキストの色変更 */
+      if (phase === 'hero' && enableHeroColorChange && !skipIntro) {
+        const tl = gsap.timeline();
+        if (finalTextFrontRef.current?.material) {
+          tl.to((finalTextFrontRef.current.material as MeshStandardMaterial).color, {
+            r: 0.1,
+            g: 0.1,
+            b: 0.1,
+            duration: 1.2,
+            ease: 'power2.inOut',
+          });
+        }
+        if (finalTextBackRef.current?.material) {
+          tl.to(
+            (finalTextBackRef.current.material as MeshStandardMaterial).color,
+            { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' },
+            '<',
+          );
+        }
       }
-      if (text3DRef.current) {
-        tl.to(text3DRef.current.scale, { x: modelScale, y: modelScale, z: modelScale, duration: 1.4, ease: 'back.out(2)' }, '<');
-      }
-    }
-    /* 【フェーズ：ヒーロー表示】テキストの色変更 */
-    if (phase === 'hero' && enableHeroColorChange && !skipIntro) {
-      const tl = gsap.timeline();
-      if (textFrontRef.current?.material) { 
-        tl.to((textFrontRef.current.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }); 
-      }
-      if (textBackRef.current?.material) { 
-        tl.to((textBackRef.current.material as MeshStandardMaterial).color, { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' }, '<'); 
-      }
-    }
-  }, { dependencies: [phase, skipIntro, enableHeroColorChange] });
+    },
+    { dependencies: [phase, skipIntro, enableHeroColorChange] },
+  );
 
   /* 浮遊アニメーション
   --------------------------------------- */
-  const float = { // 浮遊オプション
+  const float = {
+    // 浮遊オプション
     yPhase: 1.2,
     ySpeed: 0.82,
     yAmp: 0.1,
@@ -130,16 +162,15 @@ export function TitleScene({
       <group ref={finalGroupRef}>
         {preText && (
           <Text
-            ref={textFrontRef}
+            ref={finalTextFrontRef}
             font='/fonts/Urbanist-MediumItalic.ttf'
             position={preText.position}
-            fontSize={preText.fontSize ?? 1.6} 
-            color={textColor}
-            anchorX={preText.anchorX ?? 'right'} 
+            fontSize={preText.fontSize ?? 1.6}
+            color={ skipIntro ? '#1a1a1a' : (preText.textColor ?? '#fafafa') }
+            anchorX={preText.anchorX ?? 'right'}
             anchorY='middle'
             material-transparent
             material-opacity={skipIntro ? 1 : 0}
-            onSync={skipIntro ? (t: Mesh) => (t.material as MeshStandardMaterial).color.setRGB(0.1, 0.1, 0.1) : undefined}
           >
             {preText.text}
           </Text>
@@ -166,16 +197,15 @@ export function TitleScene({
         </mesh>
         {postText && (
           <Text
-            ref={textBackRef}
+            ref={finalTextBackRef}
             font='/fonts/Urbanist-MediumItalic.ttf'
             position={postText.position}
-            fontSize={postText.fontSize ?? 1.6} 
-            color={textColor}
-            anchorX={postText.anchorX ?? 'left'} 
+            fontSize={postText.fontSize ?? 1.6}
+            color={ skipIntro ? '#1a1a1a' : (postText.textColor ?? '#fafafa') }
+            anchorX={postText.anchorX ?? 'left'}
             anchorY='middle'
             material-transparent
             material-opacity={skipIntro ? 1 : 0}
-            onSync={skipIntro ? (t: Mesh) => (t.material as MeshStandardMaterial).color.setRGB(0.1, 0.1, 0.1) : undefined}
           >
             {postText.text}
           </Text>

@@ -64,8 +64,7 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
     setTransitionTo(path);
   };
 
-  useGSAP(
-    () => {
+  useGSAP( () => {
       if (transitionTo) {
         gsap.fromTo(
           '.whiteCurtain',
@@ -243,7 +242,8 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
           position: [0.2, 0, -0.5], 
           anchorX: 'left' 
         }}
-        enableHeroColorChange    // ← phase='hero' で文字色変化
+        enableHeroColorChange
+        wrapperPreset='main'
       />
       {/* ページリロードボタン */}
       {isRefreshing && phase === 'loading' && (

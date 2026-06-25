@@ -1,5 +1,4 @@
 'use client';
-
 // GSAP
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
@@ -10,20 +9,19 @@ gsap.registerPlugin(ScrollTrigger, MorphSVGPlugin);
 import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 // コンポーネント
-import { CanvasTitle } from './Canvas/CanvasTitle';
+import { CanvasTitle } from '../_components/CanvasTitle';
 // Lenis
 import { useLenis } from 'lenis/react';
-// Blob生成
+// Blob
 import * as blobs from 'blobs/v2';
+// コンポーネント
 import { SplitText } from '../_components/splitText';
-// カーテン（Home と共用。色順・方向は逆にして使う）
 import { Curtains } from '../_components/Curtains';
 
 export default function About() {
   const [phase, setPhase] = useState<'curtain' | 'title' | 'reveal'>('curtain');
   const [scrollLocked, setScrollLocked] = useState<boolean>(true);
   const [showScrollHint, setShowScrollHint] = useState<boolean>(false);
-  /* Home への退場カーテン（blob scrub 完了で出現させる） */
   const [showCurtain, setShowCurtain] = useState<boolean>(false);
   const lenis = useLenis();
 
@@ -77,22 +75,7 @@ export default function About() {
     /* タイトルの出現 */
     gsap.set('.aboutBg', { y: '100%' });
     const tl = gsap.timeline({ onComplete: () => setPhase('title') });
-    tl.to('.aboutBg', { y: '0%', duration: 1.4, ease: 'power2.inOut' }).to(canvasTitleRef.current, {
-      y: '-40vh',
-      ease: 'power2.inOut',
-      scrollTrigger: {
-        trigger: '.titleSection',
-        start: 'top top',
-        end: '60% top',
-        scrub: true,
-        onLeave: () => {
-          gsap.to('.aboutBg', { backgroundColor: '#222222', duration: 0.4, ease: 'power2.inOut' });
-        },
-        onEnterBack: () => {
-          gsap.to('.aboutBg', { backgroundColor: '#FAF3E1', duration: 0.4, ease: 'power2.inOut' });
-        },
-      },
-    });
+    tl.to('.aboutBg', { y: '0%', duration: 1.4, ease: 'power2.inOut' });
   }, []);
 
   /* 行ごとの出現アニメーション */
@@ -181,9 +164,7 @@ export default function About() {
     ).fromTo(
       '.contactText',
       { y: '-100%' },
-      { y: 0, duration: 0.4, stagger: { amount: 1.2 }, ease: 'power2.out' },
-      '-=0.5', // blob 拡大の途中から並行
-    );
+      { y: 0, duration: 0.4, stagger: { amount: 1.2 }, ease: 'power2.out' }, '-=0.5' );
   }, []);
 
   /* 2. 拡大 scrub：表示後 300vh で scale 1 → 3 */
@@ -227,9 +208,33 @@ export default function About() {
 
   return (
     <main>
-      {/* z-20: タイトルロゴ（クリーム幕より上に表示） */}
       <section className='titleSection h-[200vh] pointer-events-none'>
-        <CanvasTitle ref={canvasTitleRef} phase={phase} />
+        <CanvasTitle
+          wrapperPreset='sub'
+          ref={canvasTitleRef}
+          phase={phase}
+          modelPath='/models/model__letter-a.glb'
+          modelName='letter_a'
+          modelPosition={[-2.8, 0, 0]}
+          postText={{
+            text: 'Bout Me',
+            position: [-1.9, 0, -0.5],
+            anchorX: 'left',
+            textColor: '#222'
+          }}
+          bgColor='#FAF3E1'
+          shrinkMoveAnim={{
+            type: 'scrub',
+            triggerSelector: '.titleSection',
+            bgTarget: '.aboutBg',
+            bgColorOnLeave: '#222',
+            bgColorOnEnterBack: '#FAF3E1',
+            textColorOnLeave: '#FAF3E1',
+            textColorOnEnterBack: '#222',
+            transmissionColorOnLeave: '#222',
+            transmissionColorOnEnterBack: '#FAF3E1',
+          }}
+        />
       </section>
 
       {/* z-auto: スクロール用コンテンツ */}
@@ -310,7 +315,7 @@ export default function About() {
       </section>
 
       {/* コンタクト */}
-      <section className={`contactSection relative z-60 ${endBlobAnimation ? 'h-[300vh]' : 'h-[100vh]'}`}>
+      <section className={`contactSection relative z-60 ${endBlobAnimation ? 'h-[300vh]' : 'h-screen'}`}>
         <div className='sticky top-0 h-screen flex items-center justify-center'>
           <a href='mailto:stpop0111@gmail.com' className='flex items-center justify-center group'>
             <svg viewBox='0 0 716 445' className='absolute w-[80vw] max-w-180 h-auto overflow-visible'>

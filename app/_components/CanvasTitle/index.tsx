@@ -4,7 +4,7 @@
 import { Canvas } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
 import { Suspense, useRef } from 'react';
-import { type Group } from 'three';
+import { type Group, type Mesh, type Color, MeshStandardMaterial } from 'three';
 // GSAP
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -13,6 +13,7 @@ gsap.registerPlugin(ScrollTrigger);
 // コンポーネント
 import { TitleScene } from './Model';
 import type { TitleSceneProps } from './Model';
+import HexToRgb from '../HexToRGB';
 
 /** -------------------------------------------------
   型定義
@@ -23,71 +24,154 @@ type CommonAnimParams = {
   yTarget?: string;
   ease?: string;
 };
-
-// パターン1: phase 自動
-type AutoAnimConfig = CommonAnimParams & {
+// タイトルのアニメーション：フェーズ変化による自動縮小
+type AutoShrink = CommonAnimParams & {
   type: 'auto';
   triggerPhase: string;
   duration?: number;
 };
-
-// パターン2: scroll scrub
-type ScrubAnimConfig = CommonAnimParams & {
+// タイトルのアニメーション：スクロールによる縮小
+type ScrubShrink = CommonAnimParams & {
   type: 'scrub';
   triggerSelector: string;
-  start?: string;
-  end?: string;
+
+  // コールバック関数
   onLeave?: () => void;
   onEnterBack?: () => void;
-};
 
-// Union
-type ShrinkMoveConfig = AutoAnimConfig | ScrubAnimConfig;
+  // 変化する内容
+  bgTarget?: string; 
+  bgColorOnLeave?: string;
+  bgColorOnEnterBack?: string;
+
+  // テキスト色変化
+  textColorOnLeave?: string;
+  textColorOnEnterBack?: string;
+  transmissionColorOnLeave?: string;
+  transmissionColorOnEnterBack?: string;
+};
+type AnimateConfig = AutoShrink | ScrubShrink;
+
+type WrapperPreset = 'main' | 'sub';
 
 /* タイトルシーンのプロップスを受け取る */
 type CanvasTitleProps = TitleSceneProps & {
   ref?: React.RefObject<HTMLDivElement | null>;
-  shrinkMoveAnim?: ShrinkMoveConfig;
+  shrinkMoveAnim?: AnimateConfig;
+  wrapperPreset?: WrapperPreset;
 };
 
 /** ------------------------ 型定義 ------------------------ **/
 
-export function CanvasTitle({ 
+export function CanvasTitle({
   ref: wrapperRef,
   shrinkMoveAnim,
-  ...sceneProps }
-  : CanvasTitleProps) {
-  const { skipIntro = false } = sceneProps;
+  wrapperPreset = 'main',
+  ...sceneProps
+}: CanvasTitleProps) {
   const groupRef = useRef<Group>(null);
+  const textFrontRef = useRef<Mesh>(null);
+  const textBackRef = useRef<Mesh>(null);
+  const transmissionBgRef = useRef<Color | null>(null);
+  const { skipIntro = false } = sceneProps;
+  
+  /* ラッパーの表示内容定義
+  --------------------------------------- */
+  let wrapper!: string;
+  let inner!: string;
+  switch (wrapperPreset) {
+    case 'main':
+      wrapper = `fixed w-full h-[30vh] pointer-events-auto ${skipIntro ? 'z-80' : 'z-92'}`;
+      inner = `w-full h-full`;
+      break;
+    case 'sub':
+      wrapper = 'fixed inset-0 flex items-center justify-center z-50';
+      inner = 'w-full h-[40vh]';
+      break;
+  }
 
-  /* 縮小+移動 アニメ */
+  /* 表示アニメーション
+  --------------------------------------- */
   useGSAP( () => {
-      if (!shrinkMoveAnim) return;
+    if (!shrinkMoveAnim) return;
+    const scale = shrinkMoveAnim.scaleTarget ?? 0.5;
+    const y = shrinkMoveAnim.yTarget ?? '-40vh';
+    const ease = shrinkMoveAnim.ease ?? 'power2.inOut';
 
-      const scale = shrinkMoveAnim.scaleTarget ?? 0.5;
-      const y = shrinkMoveAnim.yTarget ?? '-40vh';
-      const ease = shrinkMoveAnim.ease ?? 'power2.inOut';
-
-      if (shrinkMoveAnim.type === 'auto') {
-        // phase 自動再生
+    switch (shrinkMoveAnim.type) {
+      case 'auto':{
         if (sceneProps.phase === shrinkMoveAnim.triggerPhase) {
           const duration = shrinkMoveAnim.duration ?? 1.2;
-          gsap.to(wrapperRef?.current, { y, duration, ease });
-          if (groupRef.current) {
-            gsap.to(groupRef.current.scale, { x: scale, y: scale, z: scale, duration, ease });
-          }
-        }
-      } else {
-        // scroll scrub
+          gsap.to(wrapperRef!.current, { y, duration, ease });
+          if (groupRef.current) { gsap.to(groupRef.current.scale, { x: scale, y: scale, z: scale, duration, ease }); }
+        }}
+        break;
+      case 'scrub':{
         const config = {
           trigger: shrinkMoveAnim.triggerSelector,
-          start: shrinkMoveAnim.start ?? 'top top',
-          end: shrinkMoveAnim.end ?? '60% top',
+          start: 'top top',
+          end: '60% top',
           scrub: true,
-          onLeave: shrinkMoveAnim.onLeave,
-          onEnterBack: shrinkMoveAnim.onEnterBack,
+          // スクロール時の挙動
+          onLeave: () => {
+            shrinkMoveAnim.onLeave?.();
+            if (shrinkMoveAnim.bgTarget && shrinkMoveAnim.bgColorOnLeave) {
+              gsap.to(shrinkMoveAnim.bgTarget, {
+                backgroundColor: shrinkMoveAnim.bgColorOnLeave,
+                duration: 0.4,
+                ease: 'power2.inOut',
+              });
+            }
+            if (shrinkMoveAnim.textColorOnLeave) {
+              const [r, g, b] = HexToRgb(shrinkMoveAnim.textColorOnLeave);
+              if (textFrontRef.current?.material) {
+                gsap.to((textFrontRef.current.material as MeshStandardMaterial).color, {
+                  r, g, b, duration: 0.4, ease: 'power2.inOut',
+                });
+              }
+              if (textBackRef.current?.material) {
+                gsap.to((textBackRef.current.material as MeshStandardMaterial).color, {
+                  r, g, b, duration: 0.4, ease: 'power2.inOut',
+                });
+              }
+            }
+            if (shrinkMoveAnim.transmissionColorOnLeave && transmissionBgRef.current) {
+              const [r, g, b] = HexToRgb(shrinkMoveAnim.transmissionColorOnLeave);
+              gsap.to(transmissionBgRef.current, {
+                r, g, b, duration: 0.4, ease: 'power2.inOut',
+              });
+            }
+          },
+          onEnterBack: () => {
+            shrinkMoveAnim.onEnterBack?.();
+            if (shrinkMoveAnim.bgTarget && shrinkMoveAnim.bgColorOnEnterBack) {
+              gsap.to(shrinkMoveAnim.bgTarget, {
+                backgroundColor: shrinkMoveAnim.bgColorOnEnterBack,
+                duration: 0.4,
+                ease: 'power2.inOut',
+              });
+            }
+            if (shrinkMoveAnim.textColorOnEnterBack) {
+              const [r, g, b] = HexToRgb(shrinkMoveAnim.textColorOnEnterBack);
+              if (textFrontRef.current?.material) {
+                gsap.to((textFrontRef.current.material as MeshStandardMaterial).color, {
+                  r, g, b, duration: 0.4, ease: 'power2.inOut',
+                });
+              }
+              if (textBackRef.current?.material) {
+                gsap.to((textBackRef.current.material as MeshStandardMaterial).color, {
+                  r, g, b, duration: 0.4, ease: 'power2.inOut',
+                });
+              }
+            }
+            if (shrinkMoveAnim.transmissionColorOnEnterBack && transmissionBgRef.current) {
+              const [r, g, b] = HexToRgb(shrinkMoveAnim.transmissionColorOnEnterBack);
+              gsap.to(transmissionBgRef.current, { r, g, b, duration: 0.4, ease: 'power2.inOut' });
+            }
+          },
         };
-        gsap.to(wrapperRef?.current, { y, ease, scrollTrigger: config });
+
+        gsap.to(wrapperRef!.current, { y, ease, scrollTrigger: config });
         if (groupRef.current) {
           gsap.to(groupRef.current.scale, {
             x: scale,
@@ -96,20 +180,29 @@ export function CanvasTitle({
             ease,
             scrollTrigger: config,
           });
-        }
-      }
-    },
-    { dependencies: [shrinkMoveAnim, sceneProps.phase] },
+        }}
+      break;
+      default: break;
+    }}, { dependencies: [shrinkMoveAnim, sceneProps.phase] }
   );
   return (
-    <div ref={wrapperRef} className={`fixed w-full h-[30vh] ${skipIntro ? 'z-80' : 'z-92'} pointer-events-auto`}>
-      <Canvas orthographic camera={{ position: [0, 0, 5], zoom: 100 }}>
-        <Suspense fallback={null}>
-          <Environment preset='warehouse' environmentIntensity={2} />
-          <ambientLight intensity={0.5} />
-          <TitleScene {...sceneProps} groupRef={groupRef} />
-        </Suspense>
-      </Canvas>
+    <div ref={wrapperRef} className={wrapper}>
+      <div className={inner}>
+        <Canvas orthographic camera={{ position: [0, 0, 5], zoom: 100 }}>
+          <Suspense fallback={null}>
+            <Environment preset='warehouse' environmentIntensity={2} />
+            <ambientLight intensity={0.5} />
+            <TitleScene 
+              {...sceneProps} 
+              groupRef={groupRef} 
+              textFrontRef={textFrontRef}
+              textBackRef={textBackRef}
+              transmissionBgRef={transmissionBgRef}
+            />
+          </Suspense>
+        </Canvas>
+      </div>
     </div>
   );
 }
+

@@ -23,7 +23,7 @@ export function Curtains({
         return (
           <div
             key={i}
-            className={`${cls} curtain fixed inset-x-0 ${anchor} h-[120vh]`}
+            className={`${cls} curtain fixed inset-x-0 ${anchor} h-[140vh]`}
             style={{ zIndex: 90 - i, ...radiusStyle }}
           />
         );
