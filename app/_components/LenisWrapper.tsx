@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 
 export default function LenisWrapper({ children }: { children: ReactNode }) {
   return (
-    <ReactLenis root options={{ lerp: 0.1, smoothWheel: true }}>
+    <ReactLenis root options={{ lerp: 0.1, smoothWheel: true, wheelMultiplier: 1.5, }}>
       {children}
     </ReactLenis>
   );

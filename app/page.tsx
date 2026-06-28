@@ -11,12 +11,12 @@ import { useProgress } from '@react-three/drei';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 // コンポーネントのインポート
-import { Curtains } from './_components/Curtains';
+import Curtains from './_components/Curtains';
 import { ReloadButton } from './hero/ReloadButton';
 import { HeroText } from './hero/HeroText';
 import { CanvasPC } from './hero/Canvas/CanvasPC';
 import { CanvasNavKey } from './hero/Canvas/CanvasKey';
-import { CanvasTitle } from './_components/CanvasTitle';
+import CanvasTitle from './_components/CanvasTitle';
 
 // 外側コンポーネント：マウント判定だけする
 export default function Page() {
@@ -30,7 +30,6 @@ export default function Page() {
   }, []);
 
   if (!mounted) {
-    // マウント前は白いカバーだけ（一瞬の splash）
     return <div className='fixed inset-0 bg-zinc-50 z-9999' />;
   }
 
@@ -39,42 +38,37 @@ export default function Page() {
 
 // 内側：本物の Home（skipIntro を props で受け取る）
 function Home({ skipIntro }: { skipIntro: boolean }) {
-  const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>(
-    skipIntro ? 'hero' : 'loading', // ← skipIntro 時は最初から 'hero'
-  );
+  const [phase, setPhase] = useState<'loading' | 'changing' | 'title' | 'hero'>( skipIntro ? 'hero' : 'loading' );
   const [showCurtain, setShowCurtain] = useState<boolean>(true);
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
-  /* PCモデル(canvasPCRef)のマウント完了フラグ。カーテンアップの発火条件に使う */
   const [modelReady, setModelReady] = useState<boolean>(false);
   const handleModelReady = useCallback(() => setModelReady(true), []);
 
   const keyCaps = [
-    { label: 'ABOUT ME', x: -3, color: '#222222', textColor: '#222', path: '/about' },
-    { label: 'WORKS', x: -1, color: '#F5E7C6', textColor: '#f7f7f7', path: '/works' },
-    { label: 'CREATIVE', x: 1, color: '#FA8112', textColor: '#222', path: '/creative' },
-    { label: 'ORIGINAL WORKS', x: 3, color: '#FAF3E1', textColor: '#f7f7f7', path: '/original' },
+    { label: 'ABOUT ME', x: -3, color: '#222222', textColor: '#222', path: '/about', paletteName:
+      ['bg-aboutMe-800', 'bg-aboutMe-700', 'bg-aboutMe-600', 'bg-aboutMe-500', 'bg-aboutMe-400', 'bg-aboutMe-300'] 
+    },
+    { label: 'WORKS', x: -1, color: '#F5E7C6', textColor: '#f7f7f7', path: '/works', paletteName:
+      ['bg-works-100', 'bg-works-200', 'bg-works-300', 'bg-works-400', 'bg-works-500', 'bg-works-600']
+    },
+    { label: 'CREATIVE', x: 1, color: '#FA8112', textColor: '#222', path: '/creative', paletteName:
+      ['bg-creative-950', 'bg-creative-900', 'bg-creative-800', 'bg-creative-700', 'bg-creative-600', 'bg-creative-500']
+    },
+    { label: 'ORIGINAL WORKS', x: 3, color: '#FAF3E1', textColor: '#f7f7f7', path: '/original', paletteName:
+      ['bg-originalWorks-500', 'bg-originalWorks-400', 'bg-originalWorks-300', 'bg-originalWorks-200', 'bg-originalWorks-100', 'bg-originalWorks-50']
+    },
   ];
 
   // ----------------------------------------
-  // 各ページへの遷移
+  //　各ページへの遷移
   // ----------------------------------------
   const router = useRouter();
   const [transitionTo, setTransitionTo] = useState<string | null>(null);
-  const handleClick = (path: string) => {
-    setTransitionTo(path);
+  const [navPaletteColors, setNavPaletteColors] = useState<string[]>(['']);
+  const handleClick = (path: string, paletteName: string[]) => {
+    setNavPaletteColors(paletteName);
+    setTransitionTo(`${path}?from=home`);  
   };
-
-  useGSAP( () => {
-      if (transitionTo) {
-        gsap.fromTo(
-          '.whiteCurtain',
-          { y: '100%' },
-          { y: '0%', duration: 1.4, ease: 'power2.inOut', onComplete: () => router.push(transitionTo) },
-        );
-      }
-    },
-    { dependencies: [transitionTo] },
-  );
 
   // ----------------------------------------
   // 3Dモデルのロードを待つ
@@ -160,24 +154,11 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
     () => {
       if (phase === 'hero') {
         if (!canvasPCRef.current || !canvasNavKeyRef.current || !canvasTitleRef.current) return;
-
         const tl = gsap.timeline();
-        tl.to('.curtain', {
-          y: '-100%',
-          duration: 0.5,
-          stagger: 0.08,
-          ease: 'power2.inOut',
-          onComplete: () => setShowCurtain(false),
-        }) // カーテンアップ => アニメーション終了後に状態変数を変更
-          .from(canvasPCRef.current!.position, { y: -2, duration: 1.2, ease: 'power4.inOut' }, '<')
+        tl.from(canvasPCRef.current!.position, { y: -2, duration: 1.2, ease: 'power4.inOut' }, '<')
           .from(canvasNavKeyRef.current, { y: '+100%', duration: 1.2, ease: 'power2.inOut' }, '<')
           .to(canvasTitleRef.current, { y: '-120%', duration: 1.2, ease: 'power2.inOut' }, '<')
-          .fromTo(
-            '.gradientOverlay',
-            { opacity: 0, y: '+100%' },
-            { opacity: 1, y: 0, duration: 1, ease: 'power2.out' },
-            '<',
-          ); // グラデーションが下から広がる
+          .fromTo( '.gradientOverlay', { opacity: 0, y: '+100%' }, { opacity: 1, y: 0, duration: 1, ease: 'power2.out' }, '<', ); 
       }
     },
     { dependencies: [phase, skipIntro, modelReady] },
@@ -188,16 +169,17 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   // ------------------------
   return (
     <main className='flex flex-1 items-center justify-center bg-zinc-50 text-zinc-50'>
-      {/* 幕 */}
       <Curtains
-        show={showCurtain}
+        show={!!transitionTo} anchor='bottom' baseZIndex={100} onComplete={() => transitionTo && router.push(transitionTo)}
+        motion={'enter'}
+        colors={navPaletteColors}
+      />
+      <Curtains
+        show={showCurtain} anchor='top' onComplete={() => setShowCurtain(false)}
+        motion={phase === 'hero' ? 'exit' : 'none'}
         colors={['bg-zinc-700', 'bg-zinc-600', 'bg-zinc-500', 'bg-zinc-400', 'bg-zinc-300', 'bg-zinc-200']}
       />
-
-      {/* PCモデルの配置 */}
       <CanvasPC ref={canvasPCRef} hoveredKey={hoveredKey} onReady={handleModelReady} />
-
-      {/* グラデーション（PCモデルより前に） */}
       <div
         className='gradientOverlay h-50vh fixed inset-0 pointer-events-none'
         style={{
@@ -205,16 +187,12 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
           zIndex: 30,
         }}
       />
-      {/* キーキャップ：常時マウント（hero切替の瞬間にWebGL初期化が走らないようにする） */}
       <CanvasNavKey
         ref={canvasNavKeyRef}
         keyCaps={keyCaps}
         onKeyCapClick={handleClick}
         onKeyCapHover={setHoveredKey}
       />
-
-      <div className='whiteCurtain fixed inset-0 z-100 bg-zinc-50' style={{ transform: 'translateY(100%)' }} />
-      {/* グラデーション背景 */}
       <div
         className='gradientOverlay fixed inset-0 pointer-events-none'
         style={{

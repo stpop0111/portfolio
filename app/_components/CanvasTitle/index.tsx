@@ -13,7 +13,7 @@ gsap.registerPlugin(ScrollTrigger);
 // コンポーネント
 import { TitleScene } from './Model';
 import type { TitleSceneProps } from './Model';
-import HexToRgb from '../HexToRGB';
+import HexToRgb from '../utilities/HexToRGB';
 
 /** -------------------------------------------------
   型定義
@@ -63,7 +63,7 @@ type CanvasTitleProps = TitleSceneProps & {
 
 /** ------------------------ 型定義 ------------------------ **/
 
-export function CanvasTitle({
+export default function CanvasTitle({
   ref: wrapperRef,
   shrinkMoveAnim,
   wrapperPreset = 'main',

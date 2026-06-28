@@ -13,9 +13,10 @@ import type { KeyCapType } from './index';
 export function KeyCap({ 
   keyCap, 
   onClick,
-  onHover  } : { 
+  onHover,
+} : { 
   keyCap: KeyCapType; 
-  onClick: (path: string) => void;
+  onClick: (path: string, paletteName: string[]) => void;
   onHover: (label: string | null) => void;
   }) {
   const groupRef = useRef<Group>(null);
@@ -41,7 +42,7 @@ export function KeyCap({
       y: 0,
       duration: 0.1,
       ease: 'power4.out',
-      onComplete: () => onClick(keyCap.path),
+      onComplete: () => onClick(keyCap.path, keyCap.paletteName),
     });
   };
 

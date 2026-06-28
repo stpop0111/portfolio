@@ -5,7 +5,7 @@ import { KeyCap } from './Model';
 import { Suspense } from 'react';
 import { Environment, Preload } from '@react-three/drei';
 
-type KeyCapType = { label: string; x: number; color: string; textColor: string; path: string };
+type KeyCapType = { label: string; x: number; color: string; textColor: string; path: string; paletteName: string[] };
 
 export function CanvasNavKey({
   ref,
@@ -15,7 +15,7 @@ export function CanvasNavKey({
 }: {
   ref?: React.RefObject<HTMLDivElement | null>;
   keyCaps: KeyCapType[];
-  onKeyCapClick: (path: string) => void;
+  onKeyCapClick: (path: string, paletteName: string[]) => void;
   onKeyCapHover: (label: string | null) => void;
 }) {
   return (
