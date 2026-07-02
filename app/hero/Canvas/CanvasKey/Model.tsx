@@ -9,6 +9,7 @@ import type { Group } from 'three';
 import type { Mesh } from 'three';
 // コンポーネント
 import type { KeyCapType } from './index';
+import type { ThemeName } from '../../../_components/utilities/curtainPalettes';  // ← 追加
 
 export function KeyCap({ 
   keyCap, 
@@ -16,7 +17,7 @@ export function KeyCap({
   onHover,
 } : { 
   keyCap: KeyCapType; 
-  onClick: (path: string, paletteName: string[]) => void;
+  onClick: (path: string, theme: ThemeName) => void;
   onHover: (label: string | null) => void;
   }) {
   const groupRef = useRef<Group>(null);
@@ -42,7 +43,7 @@ export function KeyCap({
       y: 0,
       duration: 0.1,
       ease: 'power4.out',
-      onComplete: () => onClick(keyCap.path, keyCap.paletteName),
+      onComplete: () => onClick(keyCap.path, keyCap.theme),
     });
   };
 

@@ -16,53 +16,33 @@
 
 @theme {
   /* AboutMe */
---color-aboutMe-50: #fafafa;
---color-aboutMe-100: #f5f5f5;
---color-aboutMe-200: #e6e6e6;
---color-aboutMe-300: #d6d6d6;
---color-aboutMe-400: #a5a5a5;
---color-aboutMe-500: #767676;
---color-aboutMe-600: #575757;
---color-aboutMe-700: #434343;
---color-aboutMe-800: #222222;
---color-aboutMe-900: #1a1a1a;
---color-aboutMe-950: #0a0a0a;
+  --color-aboutme-50: #faf3e1;
+  --color-aboutme-230: #cac4b7;
+  --color-aboutme-410: #9c988e;
+  --color-aboutme-590: #706e67;
+  --color-aboutme-770: #474643;
+  --color-aboutme-950: #222222;
  /* Works */
---color-works-50: #fcf8ee;
---color-works-100: #f5e7c6;
---color-works-200: #edd49a;
---color-works-300: #e4ba65;
---color-works-400: #dea341;
---color-works-500: #d5852b;
---color-works-600: #bc6623;
---color-works-700: #9d4a20;
---color-works-800: #803b20;
---color-works-900: #6a311d;
---color-works-950: #3c180c;
-/* Creative */
---color-creative-50: #fff8ed;
---color-creative-100: #fff0d5;
---color-creative-200: #feddaa;
---color-creative-300: #fec473;
---color-creative-400: #fc9f3b;
---color-creative-500: #fa8112;
---color-creative-600: #eb670b;
---color-creative-700: #c34d0b;
---color-creative-800: #9b3d11;
---color-creative-900: #7c3412;
---color-creative-950: #431807;
-/* Original Works */
---color-originalWorks-50: #faf3e1;
---color-originalWorks-100: #f6ebcf;
---color-originalWorks-200: #edd69a;
---color-originalWorks-300: #e3bc66;
---color-originalWorks-400: #dca543;
---color-originalWorks-500: #d4882c;
---color-originalWorks-600: #bb6924;
---color-originalWorks-700: #9c4c21;
---color-originalWorks-800: #7f3d21;
---color-originalWorks-900: #69331e;
---color-originalWorks-950: #3c190c;
+  --color-works-50: #faf3e1;
+  --color-works-230: #f6e1ba;
+  --color-works-410: #f6cd94;
+  --color-works-590: #f7b66e;
+  --color-works-770: #f99d46;
+  --color-works-950: #fa8112;
+  /* Creative */
+  --color-creative-50: #faf3e1;
+  --color-creative-230: #f9f1dc;
+  --color-creative-410: #f8eed6;
+  --color-creative-590: #f7ecd1;
+  --color-creative-770: #f6e9cb;
+  --color-creative-950: #f5e7c6;
+  /* Original Works */
+  --color-original-50: #faf3e1;
+  --color-original-230: #fbf5e7;
+  --color-original-410: #fcf8ed;
+  --color-original-590: #fdfaf3;
+  --color-original-770: #fefdf9;
+  --color-original-950: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {

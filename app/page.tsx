@@ -8,8 +8,9 @@ import type { Group } from 'three';
 import { useEnvironment, useGLTF } from '@react-three/drei';
 import { useProgress } from '@react-three/drei';
 // React
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 // コンポーネントのインポート
 import Curtains from './_components/Curtains';
 import { ReloadButton } from './hero/ReloadButton';
@@ -17,23 +18,20 @@ import { HeroText } from './hero/HeroText';
 import { CanvasPC } from './hero/Canvas/CanvasPC';
 import { CanvasNavKey } from './hero/Canvas/CanvasKey';
 import CanvasTitle from './_components/CanvasTitle';
+import { curtainPalettes, type ThemeName } from './_components/utilities/curtainPalettes';
 
-// 外側コンポーネント：マウント判定だけする
+function PageInner() {
+  const searchParams = useSearchParams();
+  const skipIntro = searchParams.get('from') === 'about';
+  return <Home skipIntro={skipIntro} />
+}
+
 export default function Page() {
-  const [mounted, setMounted] = useState(false);
-  const [skipIntro, setSkipIntro] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setSkipIntro(params.get('from') === 'about');
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return <div className='fixed inset-0 bg-zinc-50 z-9999' />;
-  }
-
-  return <Home skipIntro={skipIntro} />;
+  return (
+    <Suspense fallback={<div className='fixed inset-0 bg-zinc-50 z-9999' />} >
+      <PageInner />
+    </Suspense>
+  )
 }
 
 // 内側：本物の Home（skipIntro を props で受け取る）
@@ -44,31 +42,24 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   const [modelReady, setModelReady] = useState<boolean>(false);
   const handleModelReady = useCallback(() => setModelReady(true), []);
 
-  const keyCaps = [
-    { label: 'ABOUT ME', x: -3, color: '#222222', textColor: '#222', path: '/about', paletteName:
-      ['bg-aboutMe-800', 'bg-aboutMe-700', 'bg-aboutMe-600', 'bg-aboutMe-500', 'bg-aboutMe-400', 'bg-aboutMe-300'] 
-    },
-    { label: 'WORKS', x: -1, color: '#F5E7C6', textColor: '#f7f7f7', path: '/works', paletteName:
-      ['bg-works-100', 'bg-works-200', 'bg-works-300', 'bg-works-400', 'bg-works-500', 'bg-works-600']
-    },
-    { label: 'CREATIVE', x: 1, color: '#FA8112', textColor: '#222', path: '/creative', paletteName:
-      ['bg-creative-950', 'bg-creative-900', 'bg-creative-800', 'bg-creative-700', 'bg-creative-600', 'bg-creative-500']
-    },
-    { label: 'ORIGINAL WORKS', x: 3, color: '#FAF3E1', textColor: '#f7f7f7', path: '/original', paletteName:
-      ['bg-originalWorks-500', 'bg-originalWorks-400', 'bg-originalWorks-300', 'bg-originalWorks-200', 'bg-originalWorks-100', 'bg-originalWorks-50']
-    },
-  ];
+  const keyCaps: { label: string; x: number; color: string; textColor: string; path: string; theme: ThemeName; }[]
+  = [
+      { label: 'ABOUT ME',       x: -3, color: '#222222', textColor: '#222',    path: '/about',    theme: 'aboutMe' },
+      { label: 'WORKS',          x: -1, color: '#FA8112', textColor: '#f7f7f7', path: '/works',    theme: 'works' },
+      { label: 'CREATIVE',       x:  1, color: '#F5E7C6', textColor: '#222',    path: '/creative', theme: 'creative' },
+      { label: 'ORIGINAL WORKS', x:  3, color: '#FAF3E1', textColor: '#f7f7f7', path: '/original', theme: 'originalWorks' },
+    ];
 
   // ----------------------------------------
   //　各ページへの遷移
   // ----------------------------------------
   const router = useRouter();
   const [transitionTo, setTransitionTo] = useState<string | null>(null);
-  const [navPaletteColors, setNavPaletteColors] = useState<string[]>(['']);
-  const handleClick = (path: string, paletteName: string[]) => {
-    setNavPaletteColors(paletteName);
-    setTransitionTo(`${path}?from=home`);  
-  };
+  const [navPaletteColors, setNavPaletteColors] = useState<string[]>([]);
+  const handleClick = (path: string, theme: ThemeName) => {
+    setNavPaletteColors(curtainPalettes[theme]);
+    setTransitionTo(`${path}?from=home&theme=${theme}`);
+  }
 
   // ----------------------------------------
   // 3Dモデルのロードを待つ

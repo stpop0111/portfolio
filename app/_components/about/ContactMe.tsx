@@ -78,11 +78,13 @@ export default function ContactMe({ onScrollComplete }: {onScrollComplete: () =>
   useGSAP(() => {
   if (!endBlobAnimation) return;
   
-  ScrollTrigger.create({
+  const trigger = ScrollTrigger.create({
     trigger: '.contactSection',
     start: 'bottom-=50 bottom',
     onEnter: () => onScrollComplete(),
   });
+
+  return () => { trigger.kill() };
 }, { dependencies: [endBlobAnimation] });
 
   

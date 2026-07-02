@@ -22,7 +22,7 @@ export default function Curtains({
   baseZIndex = 90,
 }: CurtainsProps) {
   const id = useId();
-  const curtainClass = `curtain${id.replace(/:/g, '_')}`;     // useId は ':' 含むので置換
+  const curtainClass = `curtain${id.replace(/:/g, '_')}`;
 
   /* 表示アニメーション
   --------------------------- */
