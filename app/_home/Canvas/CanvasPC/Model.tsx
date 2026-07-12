@@ -14,14 +14,10 @@ export function PC({
   hoveredKey: string | null;
   onReady?: () => void;
 }) {
-  /* パソコン3Dモデル */
   const { scene, nodes } = useGLTF('/models/model__pc.glb');
   const monitorRef = useRef<Group | null>(null);
 
-  /* group がマウント（= モデル読み込み完了）したら親に通知 */
-  useEffect(() => {
-    onReady?.();
-  }, [onReady]);
+  useEffect(() => { onReady?.(); }, [onReady]);
 
   useEffect(() => {
     const monitor = nodes.monitor as Group;
@@ -31,25 +27,29 @@ export function PC({
     }
   }, [nodes]);
 
-  /* 液晶表示用 */
+
+  // ---------------------------
+  // 液晶用マテリアルの作成
+  // ---------------------------
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const textureRef = useRef<CanvasTexture | null>(null);
   const screenMatRef = useRef<MeshStandardMaterial | null>(null);
 
-  // ----------------------------------------
-  // マテリアルの作成
-  // ----------------------------------------
-
   useEffect(() => {
     const canvas = document.createElement('canvas');
+
+    // 各マテリアルの設定
+    // ---------------------------
     canvas.width = 1024;
     canvas.height = Math.floor(1024 * (2.49 / 2.92));
     canvasRef.current = canvas;
 
+    /* CTX */
     const ctx = canvas.getContext('2d')!;
     ctx.fillStyle = '#222';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    /* モニターのベースカラー */
     const texture = new CanvasTexture(canvas);
     texture.flipY = false;
     textureRef.current = texture;
@@ -61,12 +61,11 @@ export function PC({
       emissiveIntensity: 3,
       side: DoubleSide,
     });
+  
     screenMatRef.current = monitorMat;
     let monitorScreen: Mesh | null = null;
     scene.traverse((obj) => {
-      if (obj instanceof Mesh && obj.name === 'mesh__monitor_1') {
-        monitorScreen = obj;
-      }
+      if (obj instanceof Mesh && obj.name === 'mesh__monitor_1') { monitorScreen = obj; }
     });
 
     scene.traverse((obj) => {
@@ -90,10 +89,11 @@ export function PC({
       }
     });
   }, [scene]);
+  // ---------------------------
 
-  // ----------------------------------------
+  // ---------------------------
   // アニメーション
-  // ----------------------------------------
+  // ---------------------------
   const pointerRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -107,24 +107,23 @@ export function PC({
 
   const scrollXRef = useRef(0);
   useFrame((state, delta) => {
-    /* モニターの首振り */
     if (!monitorRef.current) return;
+  
     const ROT_BASE_Y = Math.PI / 4;
     const ROT_FOLLOW_Y = Math.PI / 4;
     const lerpFactor = 0.1;
     const targetRotY = ROT_BASE_Y + pointerRef.current.x * ROT_FOLLOW_Y;
-
     monitorRef.current.rotation.y += (targetRotY - monitorRef.current.rotation.y) * lerpFactor;
 
-    /* モニターの表示 */
+  
     if (!canvasRef.current || !textureRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d')!;
-
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    /* 現在時刻を取得 */
+    // 現在時刻を表示
+    // ---------------------------
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     const timeStr =
@@ -136,7 +135,10 @@ export function PC({
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText(timeStr, 100, 120);
+    // ---------------------------
 
+    // ホバー時の表示
+    // ---------------------------
     if (hoveredKey) {
       const SCROLL_SPEED = 300;
       const SPACING = 200;
@@ -172,6 +174,10 @@ export function PC({
       ctx.textAlign = 'right';
       ctx.textBaseline = 'bottom';
     }
+    // ---------------------------
+
+    // 画面のノイズ
+    // ---------------------------
 
     /* スキャンラインの追加 */
     const LINE_SPACING = 8;
@@ -193,33 +199,39 @@ export function PC({
 
     /* グリッチ */
     if (Math.random() < 0.05) {
-      const glitchY = Math.floor(Math.random() * canvas.height);
-      const glitchHeight = Math.floor(Math.random() * 20 + 5);
-      const glitchOffset = Math.floor(Math.random() - 0.5) * 50;
+      const GLITCH_SETTINGS = {
+        'Y' : Math.floor(Math.random() * canvas.height),
+        'HEIGHT' : Math.floor(Math.random() * 20 + 5),
+        'OFFSET' : Math.floor(Math.random() - 0.5) * 50
+      }
 
-      if (glitchY + glitchHeight < canvas.height) {
-        const imageData = ctx.getImageData(0, glitchY, canvas.width, glitchHeight);
-        ctx.clearRect(0, glitchY, canvas.width, glitchHeight);
-        ctx.putImageData(imageData, glitchOffset, glitchY);
+      if (GLITCH_SETTINGS.Y + GLITCH_SETTINGS.HEIGHT < canvas.height) {
+        const imageData = ctx.getImageData(0, GLITCH_SETTINGS.Y, canvas.width, GLITCH_SETTINGS.HEIGHT);
+        ctx.clearRect(0, GLITCH_SETTINGS.Y, canvas.width, GLITCH_SETTINGS.HEIGHT);
+        ctx.putImageData(imageData, GLITCH_SETTINGS.OFFSET, GLITCH_SETTINGS.Y);
       }
     }
-
     textureRef.current.needsUpdate = true;
+    // ---------------------------
 
-    /* カメラ追従 */
-    const CAMERA_BASE_X = 3;
-    const CAMERA_BASE_Y = -0.4;
-    const CAMERA_FOLLOW_X = 1.5;
-    const CAMERA_FOLLOW_Y = -0.5;
-    const cameraLerp = 0.05;
+    // カメラのポインター追従
+    // ---------------------------
+    const CAMERA_SETTINGS = {
+      'BASE_X': 3,
+      'BASE_Y': -0.4,
+      'FOLLOW_X': 1.5,
+      'FOLLOW_Y': -0.5,
+      'LERP':0.05
+    }
 
-    const targetCamX = CAMERA_BASE_X + pointerRef.current.x * CAMERA_FOLLOW_X;
-    const targetCamY = CAMERA_BASE_Y + pointerRef.current.y * CAMERA_FOLLOW_Y;
+    const targetCamX = CAMERA_SETTINGS.BASE_X + pointerRef.current.x * CAMERA_SETTINGS.FOLLOW_X;
+    const targetCamY = CAMERA_SETTINGS.BASE_Y + pointerRef.current.y * CAMERA_SETTINGS.FOLLOW_Y;
 
-    state.camera.position.x += (targetCamX - state.camera.position.x) * cameraLerp;
-    state.camera.position.y += (targetCamY - state.camera.position.y) * cameraLerp;
-
+    state.camera.position.x += (targetCamX - state.camera.position.x) * CAMERA_SETTINGS.LERP;
+    state.camera.position.y += (targetCamY - state.camera.position.y) * CAMERA_SETTINGS.LERP;
     state.camera.lookAt(0, 0.6, 0);
+    // ---------------------------
+
   });
 
   return (

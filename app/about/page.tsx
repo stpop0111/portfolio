@@ -1,94 +1,82 @@
 'use client';
-// GSAP
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { MorphSVGPlugin } from 'gsap/MorphSVGPlugin';
-gsap.registerPlugin(ScrollTrigger, MorphSVGPlugin);
 // React
 import { useRef, useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
-
 // Lenis
 import { useLenis } from 'lenis/react';
-// コンポーネント
+// コンポーネント(描画)
 import CanvasTitle from '../_components/CanvasTitle';
-import Curtains from '../_components/Curtains';
-import ResetScrollPosition from "../_components/utilities/ResetScrollPosition";
-import ContactMe from '../_components/about/ContactMe';
-import Scrollhint from '../_components/about/ScrollHint';
-import { Accent } from '../_components/about/ParagraphStyle';
-import { Paragraph } from '../_components/about/ParagraphStyle';
-import { curtainPalettes, type ThemeName } from '../_components/utilities/curtainPalettes';
+import Curtains from '../_components/Curtains/Curtains';
+// 機能性
+import useResetScrollPosition from '../_utils/useResetScrollPosition';
+import useScrollLocker from '../_utils/useScrollLocker'
+import { curtainPalettes, type ThemeName } from '../_components/Curtains/curtainPalettes';
+// ページ固有（AboutMe）
+import ContactMe from './_components/ContactMe';
+import Scrollhint from './_components/ScrollHint';
+import { Accent } from './_components/ParagraphStyle';
+import { Paragraph } from './_components/ParagraphStyle';
 
 function PageInner() {
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
   const theme = searchParams.get('theme') as ThemeName | null;
-  return <Home from={from} theme={theme} />;
+  return <About from={from} theme={theme} />;
 }
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className='fixed inset-0 bg-zinc-50 z-9999' />} >
+    <Suspense fallback={<div className='fixed inset-0 bg-[#FAF3E1] z-9999' />}>
       <PageInner />
     </Suspense>
   );
 }
 
-function Home({ from, theme }: { from: string | null; theme: ThemeName | null }) {
+function About({ from, theme }: { from: string | null; theme: ThemeName | null }) {
+  const canvasTitleRef = useRef<HTMLDivElement>(null);
+  const [phase, setPhase] = useState<'curtain' | 'title'>(from === 'home' ? 'curtain' : 'title');
   const [showEntryCurtain, setShowEntryCurtain] = useState(from === 'home');
-  const [entryColors] = useState<string[]>( theme && curtainPalettes[theme] ? curtainPalettes[theme] : curtainPalettes.aboutMe );
-  const [phase, setPhase] = useState<'curtain' | 'title' | 'reveal'>('curtain');
   const [showCurtain, setShowCurtain] = useState<boolean>(false);
+  const [entryColors] = useState<string[]>( theme && curtainPalettes[theme] ? curtainPalettes[theme] : curtainPalettes.aboutMe, );
+  const [scrollLocked, setScrollLocked] = useState<boolean>(true);
+  const [showHint, setShowHint] = useState<boolean>(false);
   const router = useRouter();
   const lenis = useLenis();
-  ResetScrollPosition(lenis);
+  useResetScrollPosition(lenis); // ページのマウント時に毎回スクロール位置をリセット
+  useScrollLocker(lenis, scrollLocked); // スクロール制御するためにcss＋lenisをリセット
 
-  const [scrollLocked, setScrollLocked] = useState<boolean>(true);
-  const [showHint, setShowHint] = useState<boolean>(false)
+  // 4秒停止後、スクロールヒントを表示＋スクロールロックの解除
+  // ---------------------------
   useEffect(() => {
     if (phase !== 'title') return;
     const timer = setTimeout(() => {
-      setScrollLocked(false)
-      setShowHint(true)
+      setScrollLocked(false);
+      setShowHint(true);
     }, 4000);
     return () => clearTimeout(timer);
   }, [phase]);
-
-  /* lenisのスクロール制御&CSSにてネイティブスクロールの制御 */
-  useEffect(() => {
-    if (!lenis) return;
-    if (scrollLocked) { lenis.stop(); } 
-    else { lenis.start(); }
-    document.body.style.overflow = scrollLocked ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [lenis, scrollLocked]);
-
-  /* タイトルのアニメーション */
-  const canvasTitleRef = useRef<HTMLDivElement>(null);
-  useGSAP(() => {
-    const tl = gsap.timeline({ onComplete: () => setPhase('title') });
-  }, []);
-
+  // ---------------------------
+  
   return (
     <main>
-      <Curtains show = {showEntryCurtain} anchor = 'top' motion = 'exit' onComplete  = {() => setShowEntryCurtain(false)} colors  = {entryColors} /> {/* 'Home'から（キーキャップカラー） */}
-      <Curtains show = {showCurtain} anchor      = 'top' motion = 'enter' onComplete = {() => router.push('/?from=about')} colors = {curtainPalettes.zinc}/>{/* 'Home'へ（デフォルトカラー） */}
-
+      {/* カーテン遷移（Homeから） */}
+      <Curtains show={showEntryCurtain} anchor='top' motion='exit' colors={entryColors} onComplete={() => {setShowEntryCurtain(false); setPhase('title')}} /> 
+      {/* カーテン遷移（Homeへ） */}
+      <Curtains show={showCurtain} anchor='top' motion='enter' colors={curtainPalettes.zinc} onComplete={() => router.push('/?from=about')} /> 
+      {/* 3Dタイトル */}
       <section className='titleSection h-[200vh] pointer-events-none'>
-        <CanvasTitle 
-          bgColor='#FAF3E1' wrapperPreset='sub' ref={canvasTitleRef} phase={phase} modelPath='/models/model__letter-a.glb' modelName='letter_a' modelPosition={[-2.8, 0, 0]}
-          postText={{ text: 'Bout Me', position: [-1.9, 0, -0.5], anchorX: 'left', textColor: '#222', }}
-          shrinkMoveAnim={{ type: 'scrub', triggerSelector: '.titleSection', bgTarget: '.aboutBg', bgColorOnLeave: '#222', bgColorOnEnterBack: '#FAF3E1', textColorOnLeave: '#FAF3E1', textColorOnEnterBack: '#222', transmissionColorOnLeave: '#222', transmissionColorOnEnterBack: '#FAF3E1', }}
-        />
-      </section>
+        <CanvasTitle bgColor='#FAF3E1' wrapperPreset='sub' ref={canvasTitleRef} phase={phase} modelPath='/models/model__letter-a.glb' modelName='letter_a' modelPosition={[-2.8, 0, 0]} postText={{ text: 'Bout Me', position: [-1.9, 0, -0.5], anchorX: 'left', textColor: '#222' }} shrinkMoveAnim={{ type: 'scrub', triggerSelector: '.titleSection', bgTarget: '.aboutBg', bgColorOnLeave: '#222', bgColorOnEnterBack: '#FAF3E1', textColorOnLeave: '#FAF3E1', textColorOnEnterBack: '#222', transmissionColorOnLeave: '#222', transmissionColorOnEnterBack: '#FAF3E1', }} />
+      </section> 
+      {/* スクロールヒント */}
+      <Scrollhint show={showHint} /> 
 
-      {/* z-auto: スクロール用コンテンツ */}
+      {/* 背景 */}
+      <section className='aboutBg fixed inset-0 z-10' style={{ backgroundColor: '#FAF3E1' }} />
+
+      {/* パララックステキスト */}
       <section className='aboutContent relative z-20'>
         <div className='introBlock space-y-[20vh]'>
-          {/* セクション1: 自己紹介 */}
           <div className=''>
             <Paragraph>こんにちは、<Accent>Seita</Accent>です。</Paragraph>
             <Paragraph>Webの仕事に</Paragraph>
@@ -96,77 +84,44 @@ function Home({ from, theme }: { from: string | null; theme: ThemeName | null })
             <Paragraph><Accent>Junior Web Developer</Accent>です。</Paragraph>
           </div>
 
-          {/* セクション2: バックグラウンド */}
           <div className=''>
-            <Paragraph>
-              電子工業科で<Accent>C</Accent>や<Accent>Python</Accent>に触れ、
-            </Paragraph>
+            <Paragraph>電子工業科で<Accent>C</Accent>や<Accent>Python</Accent>に触れ、</Paragraph>
             <Paragraph>国際教養学部で言葉を学び、</Paragraph>
             <Paragraph>今はコードに戻ってきました。</Paragraph>
           </div>
 
-          {/* セクション3: 現在のロール */}
           <div className=''>
-            <Paragraph>
-              <Accent fontFamily='font-kozuka-mincho'>小さなチームのリード</Accent>として、
-            </Paragraph>
-            <Paragraph>
-              <Accent fontFamily='font-kozuka-mincho'>ECサイト</Accent>の企画から実装まで、
-            </Paragraph>
+            <Paragraph><Accent fontFamily='font-kozuka-mincho'>小さなチームのリード</Accent>として、</Paragraph>
+            <Paragraph><Accent fontFamily='font-kozuka-mincho'>ECサイト</Accent>の企画から実装まで、</Paragraph>
             <Paragraph>ひとつの頭で考えています。</Paragraph>
           </div>
 
-          {/* セクション4: 仕事観 */}
           <div className=''>
             <Paragraph>企画もデザインも、</Paragraph>
             <Paragraph>コードも分析も、</Paragraph>
-            <Paragraph>
-              すべて<Accent fontFamily='font-kozuka-mincho'>地続き</Accent>の仕事として。
-            </Paragraph>
+            <Paragraph>すべて<Accent fontFamily='font-kozuka-mincho'>地続き</Accent>の仕事として。</Paragraph>
           </div>
 
-          {/* セクション5: 制作哲学 */}
           <div className=''>
             <Paragraph>つくるものは、</Paragraph>
             <Paragraph>次に触る誰かにも、</Paragraph>
-            <Paragraph>
-              <Accent fontFamily='font-kozuka-mincho'>やさしくありたい</Accent>。
-            </Paragraph>
+            <Paragraph><Accent fontFamily='font-kozuka-mincho'>やさしくありたい</Accent>。</Paragraph>
           </div>
 
-          {/* セクション6: チーム観 */}
           <div className=''>
             <Paragraph>ひとりでできることを増やすことより、</Paragraph>
-            <Paragraph>
-              <Accent fontFamily='font-kozuka-mincho'>チーム</Accent>でできることを増やす方が、
-            </Paragraph>
+            <Paragraph><Accent fontFamily='font-kozuka-mincho'>チーム</Accent>でできることを増やす方が、</Paragraph>
             <Paragraph>わたしは好きです。</Paragraph>
           </div>
 
-          {/* セクション7: 締め */}
           <div className=''>
-            <Paragraph>
-              いつも<Accent fontFamily='font-kozuka-mincho'>好奇心</Accent>を持って、
-            </Paragraph>
-            <Paragraph>
-              いつも<Accent fontFamily='font-kozuka-mincho'>学び</Accent>ながら、
-            </Paragraph>
-            <Paragraph>
-              いつも、<Accent fontFamily='font-kozuka-mincho'>細部</Accent>に。
-            </Paragraph>
+            <Paragraph>いつも<Accent fontFamily='font-kozuka-mincho'>好奇心</Accent>を持って、</Paragraph>
+            <Paragraph>いつも<Accent fontFamily='font-kozuka-mincho'>学び</Accent>ながら、</Paragraph>
+            <Paragraph>いつも、<Accent fontFamily='font-kozuka-mincho'>細部</Accent>に。</Paragraph>
           </div>
         </div>
       </section>
-
-      <ContactMe onScrollComplete={() => setShowCurtain(true)}/>
-
-
-      <section className='aboutBg fixed inset-0 z-10' style={{ backgroundColor: '#FAF3E1' }} />
-
-      <Scrollhint show={showHint}/>
+      <ContactMe onScrollComplete={() => setShowCurtain(true)} />
     </main>
   );
 }
-
-
-

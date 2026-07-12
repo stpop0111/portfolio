@@ -8,7 +8,7 @@ import { Environment, Preload } from '@react-three/drei';
 import type { Group } from 'three';
 // コンポーネント
 import { PC } from './Model';
-import { Bloom, EffectComposer, N8AO} from '@react-three/postprocessing';
+import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 export function CanvasPC({
   ref,
@@ -27,10 +27,10 @@ export function CanvasPC({
         onCreated={({ camera }) => camera.lookAt(0, 0.6, 0)}
         shadows='soft'
       >
-        {/* 環境光（控えめに） */}
+        {/* 環境光 */}
         <Environment preset='studio' environmentIntensity={0.2} />
 
-        {/* メインライト（影あり） */}
+        {/* メインライト */}
         <directionalLight
           position={[0, 8, 6]}
           intensity={1.8}
@@ -47,13 +47,10 @@ export function CanvasPC({
 
         <Suspense fallback={null}>
           <PC groupRef={ref} hoveredKey={hoveredKey} onReady={onReady} />
-          {/* ローディング中にシェーダ/テクスチャをGPUへ焼いておく */}
           <Preload all />
         </Suspense>
 
-        {/* Postprocessing（Bloom 弱め） */}
         <EffectComposer>
-          {/* <N8AO aoRadius={1} distanceFalloff={0.5} intensity={2} quality='low' /> */}
           <Bloom intensity={0.8} luminanceThreshold={1}   radius={0.4} />
         </EffectComposer>
       </Canvas>

@@ -10,7 +10,7 @@ gsap.registerPlugin(ScrollTrigger, MorphSVGPlugin);
 import * as blobs from 'blobs/v2';
 import { useRef, useState, useEffect } from 'react';
 import { useLenis } from 'lenis/react';
-import SplitText from '../splitText';
+import SplitText from '../../_components/SplitText';
 
 export default function ContactMe({ onScrollComplete }: {onScrollComplete: () => void}) {
 

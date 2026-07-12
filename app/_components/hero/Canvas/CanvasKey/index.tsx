@@ -4,7 +4,7 @@ import { Canvas } from '@react-three/fiber';
 import { KeyCap } from './Model';
 import { Suspense } from 'react';
 import { Environment, Preload } from '@react-three/drei';
-import type { ThemeName } from '../../../_components/utilities/curtainPalettes';  // ← 追加
+import type { ThemeName } from '../../../Curtains/curtainPalettes'; 
 
 type KeyCapType = { label: string; x: number; color: string; textColor: string; path: string; theme: ThemeName; };
 
@@ -28,7 +28,6 @@ export function CanvasNavKey({
           {keyCaps.map((keyCap, i) => (
             <KeyCap key={i} keyCap={keyCap} onClick={onKeyCapClick} onHover={onKeyCapHover} />
           ))}
-          {/* ローディング中にシェーダ/テクスチャをGPUへ焼いておく */}
           <Preload all />
         </Suspense>
       </Canvas>

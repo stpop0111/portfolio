@@ -1,4 +1,4 @@
-export default function HexToRgb(hex) {
+export default function HexToRGB(hex) {
   const h = hex.replace('#', '');
   const r = parseInt(h.slice(0, 2), 16) / 255;
   const g = parseInt(h.slice(2, 4), 16) / 255;

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-export default function ResetScrollPosition(lenis) {
+export default function useResetScrollPosition(lenis) {
   /* リロード時に最上部から */
   useEffect(() => {
     if (typeof window === 'undefined') return;

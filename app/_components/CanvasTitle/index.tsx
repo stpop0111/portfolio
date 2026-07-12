@@ -13,7 +13,7 @@ gsap.registerPlugin(ScrollTrigger);
 // コンポーネント
 import { TitleScene } from './Model';
 import type { TitleSceneProps } from './Model';
-import HexToRgb from '../utilities/HexToRGB';
+import HexToRGB from '../../_utils/HexToRGB';
 
 /** -------------------------------------------------
   型定義
@@ -123,7 +123,7 @@ export default function CanvasTitle({
               });
             }
             if (shrinkMoveAnim.textColorOnLeave) {
-              const [r, g, b] = HexToRgb(shrinkMoveAnim.textColorOnLeave);
+              const [r, g, b] = HexToRGB(shrinkMoveAnim.textColorOnLeave);
               if (textFrontRef.current?.material) {
                 gsap.to((textFrontRef.current.material as MeshStandardMaterial).color, {
                   r, g, b, duration: 0.4, ease: 'power2.inOut',
@@ -136,7 +136,7 @@ export default function CanvasTitle({
               }
             }
             if (shrinkMoveAnim.transmissionColorOnLeave && transmissionBgRef.current) {
-              const [r, g, b] = HexToRgb(shrinkMoveAnim.transmissionColorOnLeave);
+              const [r, g, b] = HexToRGB(shrinkMoveAnim.transmissionColorOnLeave);
               gsap.to(transmissionBgRef.current, {
                 r, g, b, duration: 0.4, ease: 'power2.inOut',
               });
@@ -152,7 +152,7 @@ export default function CanvasTitle({
               });
             }
             if (shrinkMoveAnim.textColorOnEnterBack) {
-              const [r, g, b] = HexToRgb(shrinkMoveAnim.textColorOnEnterBack);
+              const [r, g, b] = HexToRGB(shrinkMoveAnim.textColorOnEnterBack);
               if (textFrontRef.current?.material) {
                 gsap.to((textFrontRef.current.material as MeshStandardMaterial).color, {
                   r, g, b, duration: 0.4, ease: 'power2.inOut',
@@ -165,7 +165,7 @@ export default function CanvasTitle({
               }
             }
             if (shrinkMoveAnim.transmissionColorOnEnterBack && transmissionBgRef.current) {
-              const [r, g, b] = HexToRgb(shrinkMoveAnim.transmissionColorOnEnterBack);
+              const [r, g, b] = HexToRGB(shrinkMoveAnim.transmissionColorOnEnterBack);
               gsap.to(transmissionBgRef.current, { r, g, b, duration: 0.4, ease: 'power2.inOut' });
             }
           },
@@ -205,4 +205,3 @@ export default function CanvasTitle({
     </div>
   );
 }
-
