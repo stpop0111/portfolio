@@ -14,6 +14,7 @@ import { useSearchParams } from 'next/navigation';
 // コンポーネントのインポート
 import Curtains from './_components/Curtains/Curtains';
 import CanvasTitle from './_components/CanvasTitle';
+import { FluidGridBackground } from './_home/FluidGridBackground';
 import { curtainPalettes, type ThemeName } from './_components/Curtains/curtainPalettes';
 import { ReloadButton } from './_home/ReloadButton';
 import { HeroText } from './_home/HeroText';
@@ -145,6 +146,9 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
 
   return (
     <main className='flex flex-1 items-center justify-center bg-zinc-50 text-zinc-50'>
+      {/* 背景の幾何学グリッド + 流体歪みエフェクト */}
+      <FluidGridBackground active={phase === 'hero'} />
+
       {/* カーテン遷移（各下層から） */}
       <Curtains show={!!transitionTo} anchor='bottom' baseZIndex={100} motion={'enter'} colors={navPaletteColors} onComplete={() => transitionTo && router.push(transitionTo)} />
       {/* カーテン遷移（各下層へ） */}
