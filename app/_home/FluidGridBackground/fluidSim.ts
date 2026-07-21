@@ -5,6 +5,15 @@ export type FBO = { fb: WebGLFramebuffer; tex: WebGLTexture; w: number; h: numbe
 export type Prog = { p: WebGLProgram; u: Record<string, WebGLUniformLocation | null> };
 export type FluidParams = { curlStrength: number; radius: number; dissipation: number };
 
+// 背景グリッドとタイトルで共通の歪みパラメータ(見た目の強さを統一するため一箇所で管理)
+export const FLUID_PARAMS = {
+  strength: 0.45,
+  radius: 1.5,
+  dissipation: 4,
+  curlStrength: 0,
+  chromatic: 0.15,
+};
+
 export const VERT = `#version 300 es
 in vec2 aPos;
 out vec2 vUv;
@@ -203,9 +212,6 @@ export function createProgram(gl: WebGL2RenderingContext, fragSrc: string): Prog
   return { p, u: uniforms };
 }
 
-// 切り分け用: FBOが不完全だった回数を記録(呼び出し側で目視確認できるようにする)
-export const fboDiagnostics = { incompleteCount: 0 };
-
 export function createFBO(gl: WebGL2RenderingContext, w: number, h: number): FBO {
   const tex = gl.createTexture()!;
   gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -217,12 +223,6 @@ export function createFBO(gl: WebGL2RenderingContext, w: number, h: number): FBO
   const fb = gl.createFramebuffer()!;
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
-  const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-  if (status !== gl.FRAMEBUFFER_COMPLETE) {
-    fboDiagnostics.incompleteCount++;
-    // eslint-disable-next-line no-console
-    console.warn('[fluidSim] framebuffer incomplete:', status.toString(16), w, h);
-  }
   return { fb, tex, w, h };
 }
 

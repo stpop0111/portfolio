@@ -1,17 +1,12 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { FluidSim, toSimCoords, createProgram, bindTex, blitToScreen, setupFullscreenTriangle, DISPLAY } from './fluidSim';
+import { FluidSim, toSimCoords, createProgram, bindTex, blitToScreen, setupFullscreenTriangle, DISPLAY, FLUID_PARAMS } from './fluidSim';
 
 const SIM_RES = 160;
 
-// 背景の歪みパラメータ(控えめ)
-const PARAMS = {
-  strength: 0.45,
-  radius: 1.5,
-  dissipation: 4,
-  curlStrength: 0,
-  chromatic: 0.15,
+// グリッド固有の見た目パラメータ(歪みの強さ自体はFLUID_PARAMSで背景・タイトル共通)
+const GRID_PARAMS = {
   gridSpacing: 56,
   gridOpacity: 0.4,
 };
@@ -42,16 +37,16 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
       pctx.fillStyle = '#faf3e1';
       pctx.fillRect(0, 0, w, h);
 
-      const spacing = PARAMS.gridSpacing * dpr;
+      const spacing = GRID_PARAMS.gridSpacing * dpr;
 
-      pctx.strokeStyle = `rgba(34,34,34,${PARAMS.gridOpacity * 0.5})`;
+      pctx.strokeStyle = `rgba(34,34,34,${GRID_PARAMS.gridOpacity * 0.5})`;
       pctx.lineWidth = Math.max(1, dpr);
       pctx.beginPath();
       for (let x = 0; x <= w; x += spacing) { pctx.moveTo(x, 0); pctx.lineTo(x, h); }
       for (let y = 0; y <= h; y += spacing) { pctx.moveTo(0, y); pctx.lineTo(w, y); }
       pctx.stroke();
 
-      pctx.strokeStyle = `rgba(34,34,34,${Math.min(1, PARAMS.gridOpacity)})`;
+      pctx.strokeStyle = `rgba(34,34,34,${Math.min(1, GRID_PARAMS.gridOpacity)})`;
       pctx.lineWidth = Math.max(1, dpr * 1.5);
       pctx.beginPath();
       const major = spacing * 4;
@@ -108,15 +103,15 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
       prevTime = now;
       intro(dt);
 
-      sim.step(dt, pointer, delta, PARAMS);
+      sim.step(dt, pointer, delta, FLUID_PARAMS);
       delta.x = 0; delta.y = 0;
 
       gl!.useProgram(displayProg.p);
       gl!.uniform1i(displayProg.u.tDiffuse, bindTex(gl!, 0, pageTex));
       gl!.uniform1i(displayProg.u.uVelocity, bindTex(gl!, 1, sim.velocityTex));
       gl!.uniform2f(displayProg.u.uSimSize, sim.simW, sim.simH);
-      gl!.uniform1f(displayProg.u.uDisplacementStrength, PARAMS.strength);
-      gl!.uniform1f(displayProg.u.uChromaticBoost, PARAMS.chromatic);
+      gl!.uniform1f(displayProg.u.uDisplacementStrength, FLUID_PARAMS.strength);
+      gl!.uniform1f(displayProg.u.uChromaticBoost, FLUID_PARAMS.chromatic);
       blitToScreen(gl!, canvas!.width, canvas!.height);
 
       raf = requestAnimationFrame(frame);
