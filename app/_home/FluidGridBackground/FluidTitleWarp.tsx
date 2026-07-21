@@ -88,8 +88,9 @@ export function FluidTitleWarp({
       sim.step(dt, pointer, delta, FLUID_PARAMS);
       delta.x = 0; delta.y = 0;
 
-      gl!.clearColor(0, 0, 0, 0);
-      gl!.clear(gl!.COLOR_BUFFER_BIT);
+      // sim.step()の最後はsim内部のFBOがバインドされたままなので、
+      // ここでclearすると誤ってそのFBO(速度テクスチャ)を消してしまう。
+      // 全画面三角形が全ピクセルを上書きするのでclear自体不要。
       gl!.useProgram(displayProg.p);
       gl!.uniform1i(displayProg.u.tDiffuse, bindTex(gl!, 0, pageTex));
       gl!.uniform1i(displayProg.u.uVelocity, bindTex(gl!, 1, sim.velocityTex));
