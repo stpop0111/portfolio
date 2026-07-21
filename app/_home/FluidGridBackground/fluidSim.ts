@@ -7,11 +7,11 @@ export type FluidParams = { curlStrength: number; radius: number; dissipation: n
 
 // 背景グリッドとタイトルで共通の歪みパラメータ(見た目の強さを統一するため一箇所で管理)
 export const FLUID_PARAMS = {
-  strength: 0.45,
+  strength: 0.8,
   radius: 1.5,
   dissipation: 4,
   curlStrength: 0,
-  chromatic: 0.15,
+  chromatic: 0.25,
 };
 
 export const VERT = `#version 300 es
