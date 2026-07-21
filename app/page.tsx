@@ -165,13 +165,15 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
       {/* タイトルテキスト */}
       <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} hideLoading={skipIntro} />
       {/* CanvasTitle自体は非表示のまま描画だけ継続し、FluidTitleWarpがその描画結果を歪ませて表示する */}
-      <div className='opacity-0'>
+      {/* position:fixedなCanvasTitle自身と同じくflexレイアウトの外に置き、他要素の中央寄せに影響しないようにする */}
+      <div className='fixed inset-0 pointer-events-none opacity-0'>
         <CanvasTitle ref={canvasTitleRef} phase={phase} skipIntro={skipIntro} modelPath='/models/model__letter-f.glb' modelName='letter_f' bgColor='#fafafa' enableHeroColorChange wrapperPreset='main'
           preText={{ text: 'Port', position: [-0.2, 0, -0.5], anchorX: 'right' }}
           postText={{ text: 'olio', position: [0.2, 0, -0.5], anchorX: 'left' }}
         />
       </div>
-      <FluidTitleWarp active={phase === 'hero'} sourceRef={canvasTitleRef} className={`fixed inset-0 h-full w-full pointer-events-none ${skipIntro ? 'z-80' : 'z-92'}`} />
+      {/* タイトルが画面に出ているtitleフェーズから(heroに切り替わると同時にスライドアウトが始まるため) */}
+      <FluidTitleWarp active={phase === 'title' || phase === 'hero'} sourceRef={canvasTitleRef} className={`fixed inset-0 h-full w-full pointer-events-none ${skipIntro ? 'z-80' : 'z-92'}`} />
       {/* ページリロードボタン */}
       {isRefreshing && phase === 'loading' && ( <div className='fixed z-50 bottom-8 left-1/2 -translate-x-1/2'><ReloadButton /></div> )}
     </main>
