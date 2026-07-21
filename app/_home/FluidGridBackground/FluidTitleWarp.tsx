@@ -3,73 +3,70 @@
 import { useEffect, useRef } from 'react';
 import { FluidSim, toSimCoords, createProgram, bindTex, blitToScreen, setupFullscreenTriangle, DISPLAY } from './fluidSim';
 
-const SIM_RES = 160;
+const SIM_RES = 96;
 
-// 背景の歪みパラメータ(控えめ)
 const PARAMS = {
-  strength: 0.45,
-  radius: 1.5,
+  strength: 0.6,
+  radius: 1.2,
   dissipation: 4,
   curlStrength: 0,
-  chromatic: 0.15,
-  gridSpacing: 56,
-  gridOpacity: 0.4,
+  chromatic: 0.2,
 };
 
-export function FluidGridBackground({ active = true }: { active?: boolean }) {
+/** CanvasTitle(3Dタイトル)の描画結果を毎フレーム取り込んで、背景と同じ流体で歪ませるオーバーレイ。 */
+export function FluidTitleWarp({
+  active = true,
+  sourceRef,
+  className = 'fixed inset-0 z-80 h-full w-full pointer-events-none',
+}: {
+  active?: boolean;
+  sourceRef: React.RefObject<HTMLDivElement | null>;
+  className?: string;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !active) return;
 
-    const gl = canvas.getContext('webgl2', { antialias: false, alpha: false });
+    const gl = canvas.getContext('webgl2', { antialias: false, alpha: true, premultipliedAlpha: true });
     const extCBF = gl && gl.getExtension('EXT_color_buffer_float');
-    if (!gl || !extCBF) return; // 非対応環境では何も描かず、既存の背景色のまま
+    if (!gl || !extCBF) return;
 
     setupFullscreenTriangle(gl);
     const displayProg = createProgram(gl, DISPLAY);
     const sim = new FluidSim(gl);
 
-    // ---- 背景の絵(幾何学グリッド)を2Dキャンバスに描いてテクスチャ化 ----
     const pageCanvas = document.createElement('canvas');
     const pctx = pageCanvas.getContext('2d')!;
     const pageTex = gl.createTexture()!;
+    gl.bindTexture(gl.TEXTURE_2D, pageTex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-    function drawGrid(w: number, h: number, dpr: number) {
-      pageCanvas.width = w;
-      pageCanvas.height = h;
-      pctx.fillStyle = '#faf3e1';
-      pctx.fillRect(0, 0, w, h);
-
-      const spacing = PARAMS.gridSpacing * dpr;
-
-      pctx.strokeStyle = `rgba(34,34,34,${PARAMS.gridOpacity * 0.5})`;
-      pctx.lineWidth = Math.max(1, dpr);
-      pctx.beginPath();
-      for (let x = 0; x <= w; x += spacing) { pctx.moveTo(x, 0); pctx.lineTo(x, h); }
-      for (let y = 0; y <= h; y += spacing) { pctx.moveTo(0, y); pctx.lineTo(w, y); }
-      pctx.stroke();
-
-      pctx.strokeStyle = `rgba(34,34,34,${Math.min(1, PARAMS.gridOpacity)})`;
-      pctx.lineWidth = Math.max(1, dpr * 1.5);
-      pctx.beginPath();
-      const major = spacing * 4;
-      for (let x = 0; x <= w; x += major) { pctx.moveTo(x, 0); pctx.lineTo(x, h); }
-      for (let y = 0; y <= h; y += major) { pctx.moveTo(0, y); pctx.lineTo(w, y); }
-      pctx.stroke();
-
+    // タイトルの実キャンバスを毎フレーム自分のcanvasへ位置合わせして焼き込む
+    function composite(dpr: number) {
+      pctx.clearRect(0, 0, pageCanvas.width, pageCanvas.height);
+      const titleCanvas = sourceRef.current?.querySelector('canvas') ?? null;
+      if (titleCanvas && sourceRef.current) {
+        const wrapRect = canvas!.getBoundingClientRect();
+        const titleRect = sourceRef.current.getBoundingClientRect();
+        pctx.drawImage(
+          titleCanvas,
+          (titleRect.left - wrapRect.left) * dpr,
+          (titleRect.top - wrapRect.top) * dpr,
+          titleRect.width * dpr,
+          titleRect.height * dpr,
+        );
+      }
       gl!.bindTexture(gl!.TEXTURE_2D, pageTex);
       gl!.pixelStorei(gl!.UNPACK_FLIP_Y_WEBGL, true);
       gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, gl!.RGBA, gl!.UNSIGNED_BYTE, pageCanvas);
       gl!.pixelStorei(gl!.UNPACK_FLIP_Y_WEBGL, false);
-      gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR);
-      gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.LINEAR);
-      gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE);
-      gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE);
     }
 
-    // ---- ポインター ----
     const pointer = { x: 0, y: 0 };
     const delta = { x: 0, y: 0 };
     let hasLast = false, lastX = 0, lastY = 0;
@@ -85,32 +82,22 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
     window.addEventListener('pointerdown', onMove, { passive: true });
     window.addEventListener('pointerleave', onLeave);
 
-    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let introT = reducedMotion ? 999 : 0;
-    function intro(dt: number) {
-      if (introT > 1.4) return;
-      introT += dt;
-      const t = introT / 1.4;
-      const x = (0.15 + t * 0.6) * sim.simW;
-      const y = (0.5 + Math.sin(t * Math.PI * 2) * 0.12) * sim.simH;
-      if (hasLast) { delta.x += (x - lastX) * 0.6; delta.y += (y - lastY) * 0.6; }
-      lastX = x; lastY = y; hasLast = true;
-      pointer.x = x; pointer.y = y;
-    }
-
     let raf = 0;
     let prevTime = performance.now();
     let running = false;
+    let dpr = 1;
 
     function frame(now: number) {
       if (!running) return;
       const dt = Math.min((now - prevTime) / 1000, 0.033);
       prevTime = now;
-      intro(dt);
 
+      composite(dpr);
       sim.step(dt, pointer, delta, PARAMS);
       delta.x = 0; delta.y = 0;
 
+      gl!.clearColor(0, 0, 0, 0);
+      gl!.clear(gl!.COLOR_BUFFER_BIT);
       gl!.useProgram(displayProg.p);
       gl!.uniform1i(displayProg.u.tDiffuse, bindTex(gl!, 0, pageTex));
       gl!.uniform1i(displayProg.u.uVelocity, bindTex(gl!, 1, sim.velocityTex));
@@ -137,11 +124,13 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
     document.addEventListener('visibilitychange', onVisibility);
 
     function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas!.width = Math.round(window.innerWidth * dpr);
-      canvas!.height = Math.round(window.innerHeight * dpr);
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = canvas!.getBoundingClientRect();
+      canvas!.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas!.height = Math.max(1, Math.round(rect.height * dpr));
+      pageCanvas.width = canvas!.width;
+      pageCanvas.height = canvas!.height;
       sim.resize(canvas!.width, canvas!.height, SIM_RES);
-      drawGrid(canvas!.width, canvas!.height, dpr);
       hasLast = false;
     }
     window.addEventListener('resize', resize);
@@ -156,11 +145,7 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
       window.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [active]);
+  }, [active, sourceRef]);
 
-  return (
-    <div className='fixed inset-0 z-0 pointer-events-none'>
-      <canvas ref={canvasRef} className='block h-full w-full' />
-    </div>
-  );
+  return <canvas ref={canvasRef} className={className} />;
 }

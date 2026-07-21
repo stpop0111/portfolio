@@ -188,7 +188,7 @@ export default function CanvasTitle({
   return (
     <div ref={wrapperRef} className={wrapper}>
       <div className={inner}>
-        <Canvas orthographic camera={{ position: [0, 0, 5], zoom: 100 }}>
+        <Canvas orthographic camera={{ position: [0, 0, 5], zoom: 100 }} gl={{ preserveDrawingBuffer: true }}>
           <Suspense fallback={null}>
             <Environment preset='warehouse' environmentIntensity={2} />
             <ambientLight intensity={0.5} />
