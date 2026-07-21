@@ -7,8 +7,10 @@ const SIM_RES = 160;
 
 // グリッド固有の見た目パラメータ(歪みの強さ自体はFLUID_PARAMSで背景・タイトル共通)
 const GRID_PARAMS = {
-  gridSpacing: 56,
-  gridOpacity: 0.4,
+  gridSpacing: 260,   // 交点の間隔(広め)
+  lineOpacity: 0.07,  // 線そのものはごく薄く
+  crossOpacity: 0.28, // 交点の十字だけ少しはっきり
+  crossSize: 7,       // 十字の腕の長さ(px, dpr倍する前)
 };
 
 export function FluidGridBackground({ active = true }: { active?: boolean }) {
@@ -38,20 +40,26 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
       pctx.fillRect(0, 0, w, h);
 
       const spacing = GRID_PARAMS.gridSpacing * dpr;
+      const crossSize = GRID_PARAMS.crossSize * dpr;
 
-      pctx.strokeStyle = `rgba(34,34,34,${GRID_PARAMS.gridOpacity * 0.5})`;
+      // ごく薄い格子線
+      pctx.strokeStyle = `rgba(34,34,34,${GRID_PARAMS.lineOpacity})`;
       pctx.lineWidth = Math.max(1, dpr);
       pctx.beginPath();
       for (let x = 0; x <= w; x += spacing) { pctx.moveTo(x, 0); pctx.lineTo(x, h); }
       for (let y = 0; y <= h; y += spacing) { pctx.moveTo(0, y); pctx.lineTo(w, y); }
       pctx.stroke();
 
-      pctx.strokeStyle = `rgba(34,34,34,${Math.min(1, GRID_PARAMS.gridOpacity)})`;
-      pctx.lineWidth = Math.max(1, dpr * 1.5);
+      // 交点だけ十字マーク
+      pctx.strokeStyle = `rgba(34,34,34,${GRID_PARAMS.crossOpacity})`;
+      pctx.lineWidth = Math.max(1, dpr);
       pctx.beginPath();
-      const major = spacing * 4;
-      for (let x = 0; x <= w; x += major) { pctx.moveTo(x, 0); pctx.lineTo(x, h); }
-      for (let y = 0; y <= h; y += major) { pctx.moveTo(0, y); pctx.lineTo(w, y); }
+      for (let x = 0; x <= w; x += spacing) {
+        for (let y = 0; y <= h; y += spacing) {
+          pctx.moveTo(x - crossSize, y); pctx.lineTo(x + crossSize, y);
+          pctx.moveTo(x, y - crossSize); pctx.lineTo(x, y + crossSize);
+        }
+      }
       pctx.stroke();
 
       gl!.bindTexture(gl!.TEXTURE_2D, pageTex);
