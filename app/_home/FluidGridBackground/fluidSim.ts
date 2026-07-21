@@ -203,6 +203,9 @@ export function createProgram(gl: WebGL2RenderingContext, fragSrc: string): Prog
   return { p, u: uniforms };
 }
 
+// 切り分け用: FBOが不完全だった回数を記録(呼び出し側で目視確認できるようにする)
+export const fboDiagnostics = { incompleteCount: 0 };
+
 export function createFBO(gl: WebGL2RenderingContext, w: number, h: number): FBO {
   const tex = gl.createTexture()!;
   gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -214,6 +217,12 @@ export function createFBO(gl: WebGL2RenderingContext, w: number, h: number): FBO
   const fb = gl.createFramebuffer()!;
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+  if (status !== gl.FRAMEBUFFER_COMPLETE) {
+    fboDiagnostics.incompleteCount++;
+    // eslint-disable-next-line no-console
+    console.warn('[fluidSim] framebuffer incomplete:', status.toString(16), w, h);
+  }
   return { fb, tex, w, h };
 }
 

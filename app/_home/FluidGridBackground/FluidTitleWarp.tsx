@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { FluidSim, toSimCoords, createProgram, bindTex, blitToScreen, setupFullscreenTriangle, DISPLAY } from './fluidSim';
+import { FluidSim, toSimCoords, createProgram, bindTex, blitToScreen, setupFullscreenTriangle, DISPLAY, fboDiagnostics } from './fluidSim';
 
 const SIM_RES = 96;
 
@@ -61,9 +61,13 @@ export function FluidTitleWarp({
           titleRect.height * dpr,
         );
       }
-      // 切り分け用: 常に左下に赤い四角を描く(これが歪めばパイプライン自体は正常)
-      pctx.fillStyle = 'red';
+      // 切り分け用: 常に左下に四角を描く(これが歪めばパイプライン自体は正常)
+      // FBOが不完全だった場合はオレンジ、正常なら赤にして目視で判別できるようにする
+      pctx.fillStyle = fboDiagnostics.incompleteCount > 0 ? 'orange' : 'red';
       pctx.fillRect(40 * dpr, (window.innerHeight - 140) * dpr, 160 * dpr, 100 * dpr);
+      pctx.fillStyle = 'white';
+      pctx.font = `${14 * dpr}px sans-serif`;
+      pctx.fillText(`fbo-bad:${fboDiagnostics.incompleteCount}`, 48 * dpr, (window.innerHeight - 100) * dpr);
       gl!.bindTexture(gl!.TEXTURE_2D, pageTex);
       gl!.pixelStorei(gl!.UNPACK_FLIP_Y_WEBGL, true);
       gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, gl!.RGBA, gl!.UNSIGNED_BYTE, pageCanvas);
