@@ -64,10 +64,13 @@ export function FluidTitleWarp({
       // 切り分け用: 常に左下に四角を描く(これが歪めばパイプライン自体は正常)
       // FBOが不完全だった場合はオレンジ、正常なら赤にして目視で判別できるようにする
       pctx.fillStyle = fboDiagnostics.incompleteCount > 0 ? 'orange' : 'red';
-      pctx.fillRect(40 * dpr, (window.innerHeight - 140) * dpr, 160 * dpr, 100 * dpr);
+      pctx.fillRect(40 * dpr, (window.innerHeight - 180) * dpr, 220 * dpr, 140 * dpr);
       pctx.fillStyle = 'white';
       pctx.font = `${14 * dpr}px sans-serif`;
-      pctx.fillText(`fbo-bad:${fboDiagnostics.incompleteCount}`, 48 * dpr, (window.innerHeight - 100) * dpr);
+      pctx.fillText(`fbo-bad:${fboDiagnostics.incompleteCount}`, 48 * dpr, (window.innerHeight - 140) * dpr);
+      pctx.fillText(`vel: ${debugVelMag.toFixed(2)}`, 48 * dpr, (window.innerHeight - 118) * dpr);
+      pctx.fillText(`ptr: ${pointer.x.toFixed(0)},${pointer.y.toFixed(0)}`, 48 * dpr, (window.innerHeight - 96) * dpr);
+      pctx.fillText(`sim: ${sim.simW}x${sim.simH}`, 48 * dpr, (window.innerHeight - 74) * dpr);
       gl!.bindTexture(gl!.TEXTURE_2D, pageTex);
       gl!.pixelStorei(gl!.UNPACK_FLIP_Y_WEBGL, true);
       gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, gl!.RGBA, gl!.UNSIGNED_BYTE, pageCanvas);
@@ -93,6 +96,9 @@ export function FluidTitleWarp({
     let prevTime = performance.now();
     let running = false;
     let dpr = 1;
+    let debugVelMag = 0;
+    const debugPx = new Float32Array(4);
+    const debugFb = gl.createFramebuffer();
 
     function frame(now: number) {
       if (!running) return;
@@ -102,6 +108,15 @@ export function FluidTitleWarp({
       composite(dpr);
       sim.step(dt, pointer, delta, PARAMS);
       delta.x = 0; delta.y = 0;
+
+      // 切り分け用: カーソル位置の速度を読み取って四角の上に数値表示する
+      gl!.bindFramebuffer(gl!.FRAMEBUFFER, debugFb);
+      gl!.framebufferTexture2D(gl!.FRAMEBUFFER, gl!.COLOR_ATTACHMENT0, gl!.TEXTURE_2D, sim.velocityTex, 0);
+      const px = Math.max(0, Math.min(sim.simW - 1, Math.floor(pointer.x)));
+      const py = Math.max(0, Math.min(sim.simH - 1, Math.floor(pointer.y)));
+      gl!.readPixels(px, py, 1, 1, gl!.RGBA, gl!.FLOAT, debugPx);
+      gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
+      debugVelMag = Math.hypot(debugPx[0], debugPx[1]);
 
       gl!.clearColor(0, 0, 0, 0);
       gl!.clear(gl!.COLOR_BUFFER_BIT);
