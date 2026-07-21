@@ -6,11 +6,11 @@ import { FluidSim, toSimCoords, createProgram, bindTex, blitToScreen, setupFulls
 const SIM_RES = 96;
 
 const PARAMS = {
-  strength: 0.6,
+  strength: 1.8,
   radius: 1.2,
   dissipation: 4,
   curlStrength: 0,
-  chromatic: 0.2,
+  chromatic: 0.5,
 };
 
 /** CanvasTitle(3Dタイトル)の描画結果を毎フレーム取り込んで、背景と同じ流体で歪ませるオーバーレイ。 */
@@ -61,6 +61,9 @@ export function FluidTitleWarp({
           titleRect.height * dpr,
         );
       }
+      // 切り分け用: 常に左下に赤い四角を描く(これが歪めばパイプライン自体は正常)
+      pctx.fillStyle = 'red';
+      pctx.fillRect(40 * dpr, (window.innerHeight - 140) * dpr, 160 * dpr, 100 * dpr);
       gl!.bindTexture(gl!.TEXTURE_2D, pageTex);
       gl!.pixelStorei(gl!.UNPACK_FLIP_Y_WEBGL, true);
       gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, gl!.RGBA, gl!.UNSIGNED_BYTE, pageCanvas);
