@@ -5,7 +5,7 @@ import { useControls, Leva } from 'leva';
 import { FluidSim, toSimCoords, createProgram, bindTex, blitToScreen, setupFullscreenTriangle, DISPLAY, FLUID_PARAMS } from './fluidSim';
 
 const SIM_RES = 160;
-const PARALLAX_RANGE = 48; // カーソル追従でコンテナが動く最大幅(px)。-inset-10(40px)の範囲内に収める
+const PARALLAX_RANGE = 80; // カーソル追従でコンテナが動く幅(±40px)。-inset-14(56px)の範囲内に収める
 
 // グリッド固有の見た目パラメータ(歪みの強さ自体はFLUID_PARAMSで背景・タイトル共通)
 const GRID_PARAMS = {
@@ -224,7 +224,7 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
   return (
     <>
       {/* パララックスで動かす分(±PARALLAX_RANGE/2)だけ画面より大きくして端が見えないようにする */}
-      <div ref={containerRef} className='fixed -inset-10 z-0 pointer-events-none'>
+      <div ref={containerRef} className='fixed -inset-14 z-0 pointer-events-none'>
         <canvas ref={canvasRef} className='block h-full w-full' />
       </div>
       {/* pointer-events-noneの外に出す(中に置くと継承されて操作できなくなる) */}
