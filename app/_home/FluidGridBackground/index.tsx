@@ -5,6 +5,7 @@ import { useControls, Leva } from 'leva';
 import { FluidSim, toSimCoords, createProgram, bindTex, blitToScreen, setupFullscreenTriangle, DISPLAY, FLUID_PARAMS } from './fluidSim';
 
 const SIM_RES = 160;
+const PARALLAX_RANGE = 48; // カーソル追従でコンテナが動く最大幅(px)。-inset-10(40px)の範囲内に収める
 
 // グリッド固有の見た目パラメータ(歪みの強さ自体はFLUID_PARAMSで背景・タイトル共通)
 const GRID_PARAMS = {
@@ -18,6 +19,7 @@ const GRID_PARAMS = {
 
 export function FluidGridBackground({ active = true }: { active?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const redrawGridRef = useRef<(() => void) | null>(null);
 
   const fluidControls = useControls('波紋', {
@@ -120,12 +122,16 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
     const pointer = { x: 0, y: 0 };
     const delta = { x: 0, y: 0 };
     let hasLast = false, lastX = 0, lastY = 0;
+    // カーソル位置に応じたパララックス(コンテナごと少し平行移動する)
+    const parallax = { x: 0, y: 0, tx: 0, ty: 0 };
 
     function onMove(e: PointerEvent) {
       const [x, y] = toSimCoords(canvas!, sim.simW, sim.simH, e.clientX, e.clientY);
       if (hasLast) { delta.x += x - lastX; delta.y += y - lastY; }
       lastX = x; lastY = y; hasLast = true;
       pointer.x = x; pointer.y = y;
+      parallax.tx = (e.clientX / window.innerWidth - 0.5) * PARALLAX_RANGE;
+      parallax.ty = (e.clientY / window.innerHeight - 0.5) * PARALLAX_RANGE;
     }
     function onLeave() { hasLast = false; }
     window.addEventListener('pointermove', onMove, { passive: true });
@@ -158,6 +164,13 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
       sim.step(dt, pointer, delta, FLUID_PARAMS);
       delta.x = 0; delta.y = 0;
 
+      // パララックス: 目標位置へなめらかに追従
+      parallax.x += (parallax.tx - parallax.x) * 0.06;
+      parallax.y += (parallax.ty - parallax.y) * 0.06;
+      if (containerRef.current) {
+        containerRef.current.style.transform = `translate3d(${parallax.x.toFixed(2)}px, ${parallax.y.toFixed(2)}px, 0)`;
+      }
+
       gl!.useProgram(displayProg.p);
       gl!.uniform1i(displayProg.u.tDiffuse, bindTex(gl!, 0, pageTex));
       gl!.uniform1i(displayProg.u.uVelocity, bindTex(gl!, 1, sim.velocityTex));
@@ -185,8 +198,10 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas!.width = Math.round(window.innerWidth * dpr);
-      canvas!.height = Math.round(window.innerHeight * dpr);
+      // コンテナはパララックス移動の分だけビューポートより大きい(-inset)ので、実寸から取る
+      const rect = canvas!.getBoundingClientRect();
+      canvas!.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas!.height = Math.max(1, Math.round(rect.height * dpr));
       sim.resize(canvas!.width, canvas!.height, SIM_RES);
       drawGrid(canvas!.width, canvas!.height, dpr);
       hasLast = false;
@@ -208,7 +223,8 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
 
   return (
     <>
-      <div className='fixed inset-0 z-0 pointer-events-none'>
+      {/* パララックスで動かす分(±PARALLAX_RANGE/2)だけ画面より大きくして端が見えないようにする */}
+      <div ref={containerRef} className='fixed -inset-10 z-0 pointer-events-none'>
         <canvas ref={canvasRef} className='block h-full w-full' />
       </div>
       {/* pointer-events-noneの外に出す(中に置くと継承されて操作できなくなる) */}

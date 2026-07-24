@@ -4,12 +4,11 @@ import { useRef, useEffect } from 'react';
 // GSAP
 import gsap from 'gsap';
 
-const SIZE = 100;
 const STRETCH_SPEED_REF = 2.5; // px/ms これくらいで最大まで伸びる
 
 export default function CustomCursor() {
-  const cursorRef = useRef<SVGSVGElement>(null);
-  const stretchRef = useRef<SVGGElement>(null);
+  const cursorRef = useRef<HTMLDivElement>(null);
+  const stretchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!cursorRef.current || !stretchRef.current) return;
@@ -63,11 +62,19 @@ export default function CustomCursor() {
   }, [cursorRef]);
 
   return (
-    // overflow-visible: 伸びた時にviewBoxの外へはみ出しても切れないようにする
-    <svg ref={cursorRef} viewBox={`0 0 ${SIZE} ${SIZE}`} className='fixed top-0 left-0 w-8 h-8 pointer-events-none z-9999 overflow-visible'>
-      <g ref={stretchRef}>
-        <circle cx='50' cy='50' r='40' fill='#222' />
-      </g>
-    </svg>
+    // backdrop-filterを使うためSVGではなくdivで描く(グラスモーフィズム)
+    <div ref={cursorRef} className='fixed top-0 left-0 w-8 h-8 pointer-events-none z-9999'>
+      <div
+        ref={stretchRef}
+        className='h-full w-full rounded-full'
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.2)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+        }}
+      />
+    </div>
   );
 }
