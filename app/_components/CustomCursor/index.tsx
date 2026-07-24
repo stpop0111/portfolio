@@ -18,9 +18,9 @@ function randomBlobPath(randomness = 1.7, extraPoints = 6) {
 }
 
 // 速く動かした時に少し離れた場所にちぎれて残る小さなblob(スライムの分裂のように)
-function spawnChip(x: number, y: number, dirX: number, dirY: number) {
+function spawnChip(x: number, y: number, dirX: number, dirY: number, index: number) {
   const svgNS = 'http://www.w3.org/2000/svg';
-  const size = 8 + Math.random() * 8;
+  const size = 14 + Math.random() * 14;
   const el = document.createElementNS(svgNS, 'svg');
   el.setAttribute('viewBox', `0 0 ${SIZE} ${SIZE}`);
   el.setAttribute('width', `${size}`);
@@ -37,25 +37,32 @@ function spawnChip(x: number, y: number, dirX: number, dirY: number) {
   el.appendChild(path);
   document.body.appendChild(el);
 
-  // 本体のすぐ後ろにくっついた状態から始めて、少しだけ離れて縮んで消える
-  const nearX = -dirX * (size * 0.7);
-  const nearY = -dirY * (size * 0.7);
-  const driftX = -dirX * 14 + (Math.random() - 0.5) * 8;
-  const driftY = -dirY * 14 + (Math.random() - 0.5) * 8;
+  // 本体のすぐ後ろにくっついた状態から始めて、少しずつ離れながら縮んで消える(軌跡っぽく)
+  const trailDist = 10 + index * 10;
+  const nearX = -dirX * trailDist;
+  const nearY = -dirY * trailDist;
+  const driftX = -dirX * (16 + index * 6) + (Math.random() - 0.5) * 10;
+  const driftY = -dirY * (16 + index * 6) + (Math.random() - 0.5) * 10;
   gsap.set(el, { x: x - size / 2 + nearX, y: y - size / 2 + nearY, opacity: 1, scale: 1 });
   gsap.to(el, {
     x: `+=${driftX}`,
     y: `+=${driftY}`,
     scale: 0,
     opacity: 0,
-    duration: 0.55 + Math.random() * 0.25,
+    duration: 0.5 + Math.random() * 0.3,
     ease: 'power2.out',
     onComplete: () => el.remove(),
   });
 }
 
+function spawnChipBurst(x: number, y: number, dirX: number, dirY: number, count: number) {
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => spawnChip(x, y, dirX, dirY, i), i * 35);
+  }
+}
+
 const SPEED_THRESHOLD = 1.1; // px/ms 目安。これを超えたら「ちぎれる」
-const CHIP_COOLDOWN_MS = 90;
+const CHIP_COOLDOWN_MS = 140;
 const STRETCH_SPEED_REF = 2.5; // px/ms これくらいで最大まで伸びる
 
 export default function CustomCursor() {
@@ -66,7 +73,8 @@ export default function CustomCursor() {
   useEffect(() => {
     if (!cursorRef.current || !stretchRef.current) return;
     gsap.set(cursorRef.current, { xPercent: -50, yPercent: -50 });
-    gsap.set(stretchRef.current, { transformOrigin: '50% 50%' });
+    // 原点を進行方向側(前寄り)に置き、伸びた時に後ろへ引っ張られているように見せる
+    gsap.set(stretchRef.current, { transformOrigin: '65% 50%' });
     const xTo = gsap.quickTo(cursorRef.current, 'x', { duration: 0.4, ease: 'power3.out' });
     const yTo = gsap.quickTo(cursorRef.current, 'y', { duration: 0.4, ease: 'power3.out' });
     const rotTo = gsap.quickTo(stretchRef.current, 'rotation', { duration: 0.25, ease: 'power2.out' });
@@ -78,7 +86,7 @@ export default function CustomCursor() {
     });
     idleTl.to(pathRef.current, { morphSVG: BASE_BLOB, duration: 1.6, ease: 'sine.inOut' });
 
-    // 移動方向への伸び縮み(常時rAFで1に向かって戻り続け、動くたびに引き伸ばす)
+    // 移動方向への伸び縮み(常時rAFで1に向かって戻り続け、動くたびに引っ張る)
     const stretch = { x: 1, y: 1 };
     let stretchRaf = 0;
     function tickStretch() {
@@ -102,18 +110,19 @@ export default function CustomCursor() {
         const dy = e.clientY - lastY;
         const dist = Math.hypot(dx, dy);
         const speed = dist / dt;
+        const speedNorm = Math.min(speed / STRETCH_SPEED_REF, 1);
 
         if (dist > 0.5) {
           rotTo((Math.atan2(dy, dx) * 180) / Math.PI);
-          const speedNorm = Math.min(speed / STRETCH_SPEED_REF, 1);
-          stretch.x = 1 + speedNorm * 0.4;
-          stretch.y = 1 - speedNorm * 0.22;
+          stretch.x = 1 + speedNorm * 0.55;
+          stretch.y = 1 - speedNorm * 0.28;
         }
 
         if (speed > SPEED_THRESHOLD && now - lastChipTime > CHIP_COOLDOWN_MS) {
           lastChipTime = now;
           const len = dist || 1;
-          spawnChip(e.clientX, e.clientY, -dx / len, -dy / len);
+          const count = Math.max(1, Math.round(speedNorm * 5));
+          spawnChipBurst(e.clientX, e.clientY, -dx / len, -dy / len, count);
         }
       }
       lastX = e.clientX; lastY = e.clientY; lastT = now; hasLast = true;

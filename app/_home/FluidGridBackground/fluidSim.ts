@@ -176,8 +176,10 @@ void main(){
   color.rgb /= max(weightSum, vec3(0.0001));
   color.a /= max((weightSum.x + weightSum.y + weightSum.z) / 3.0, 0.0001);
 
+  // 平均を引いて色相だけをずらす(そのまま足すと強めた時に白く飛んでしまう)
   vec3 highlight = spectrum(sin(mag * 2.0) * 0.4 + 0.6);
-  color.rgb += highlight * smoothstep(0.2, 0.8, mag) * 0.25 * uChromaticBoost;
+  vec3 tint = highlight - vec3(dot(highlight, vec3(0.3333)));
+  color.rgb += tint * smoothstep(0.2, 0.8, mag) * 0.35 * uChromaticBoost;
 
   // 透過キャンバス合成のためにpremultiplied alphaで出力
   fragColor = vec4(color.rgb * color.a, color.a);

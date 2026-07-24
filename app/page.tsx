@@ -160,7 +160,7 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
       <CanvasNavKey ref={canvasNavKeyRef} keyCaps={keyCaps} onKeyCapClick={handleClick} onKeyCapHover={setHoveredKey} />
       
       {/* グラデーションのオーバーレイ */}
-      <div className='gradientOverlay fixed inset-0 pointer-events-none' style={{ background: 'linear-gradient(0deg,rgba(250, 243, 225, 1) 0%, rgba(255, 255, 225, 0) 48%)', zIndex: 30, }} />
+      <div className='gradientOverlay fixed inset-0 pointer-events-none' style={{ background: 'linear-gradient(0deg, rgb(250, 243, 225) 10%, rgba(255, 255, 225, 0) 40%)', zIndex: 30, }} />
 
       {/* タイトルテキスト */}
       <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} hideLoading={skipIntro} />

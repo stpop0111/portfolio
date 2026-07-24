@@ -1,10 +1,11 @@
 // React
 import { useFrame } from '@react-three/fiber';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 // GSAP
 import gsap from 'gsap';
 // THREE
 import { Html, MeshTransmissionMaterial, useGLTF } from '@react-three/drei';
+import { Color } from 'three';
 import type { Group } from 'three';
 import type { Mesh } from 'three';
 // コンポーネント
@@ -24,6 +25,9 @@ export function KeyCap({
   const { nodes } = useGLTF('/models/model__keycap.glb');
   const geometry = (nodes.key as Mesh).geometry;
   const selfTimeRef = useRef(0);
+  // MeshTransmissionMaterialは背景を指定しないと透過した先に何もなく黒く見えるため、
+  // CanvasTitleと同様に色を渡してガラスの向こうに見える色にする
+  const transmissionBackground = useMemo(() => new Color(keyCap.color), [keyCap.color]);
 
   // ---------------------------
   // クリックアニメーション
@@ -120,12 +124,13 @@ export function KeyCap({
         <MeshTransmissionMaterial
           samples={10}
           resolution={768}
-          transmission={1}
-          roughness={0.02}
-          thickness={1}
+          transmission={0.95}
+          roughness={0.06}
+          thickness={0.9}
           ior={1.5}
           chromaticAberration={0.15}
           anisotropy={0}
+          background={transmissionBackground}
           backside={true}
           color={keyCap.color}
         />
