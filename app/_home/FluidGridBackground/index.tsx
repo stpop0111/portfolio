@@ -205,9 +205,12 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
   }, [active]);
 
   return (
-    <div className='fixed inset-0 z-0 pointer-events-none'>
-      <canvas ref={canvasRef} className='block h-full w-full' />
+    <>
+      <div className='fixed inset-0 z-0 pointer-events-none'>
+        <canvas ref={canvasRef} className='block h-full w-full' />
+      </div>
+      {/* pointer-events-noneの外に出す(中に置くと継承されて操作できなくなる) */}
       <Leva collapsed titleBar={{ title: '波紋の調整(確認用)' }} />
-    </div>
+    </>
   );
 }

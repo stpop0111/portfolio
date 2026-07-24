@@ -51,10 +51,10 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
 
   const keyCaps: { label: string; x: number; color: string; textColor: string; path: string; theme: ThemeName; }[]
   = [
-      { label: 'ABOUT ME',       x: -3, color: '#ffffff', textColor: '#222',    path: '/about',    theme: 'aboutMe' },
-      { label: 'WORKS',          x: -1, color: '#ffffff', textColor: '#f7f7f7', path: '/works',    theme: 'works' },
-      { label: 'CREATIVE',       x:  1, color: '#ffffff', textColor: '#222',    path: '/creative', theme: 'creative' },
-      { label: 'ORIGINAL WORKS', x:  3, color: '#ffffff', textColor: '#f7f7f7', path: '/original', theme: 'originalWorks' },
+      { label: 'ABOUT ME',       x: -3, color: '#FAF3E1', textColor: '#222',    path: '/about',    theme: 'aboutMe' },
+      { label: 'WORKS',          x: -1, color: '#FAF3E1', textColor: '#f7f7f7', path: '/works',    theme: 'works' },
+      { label: 'CREATIVE',       x:  1, color: '#FAF3E1', textColor: '#222',    path: '/creative', theme: 'creative' },
+      { label: 'ORIGINAL WORKS', x:  3, color: '#FAF3E1', textColor: '#f7f7f7', path: '/original', theme: 'originalWorks' },
     ];
 
   // ---------------------------
@@ -160,7 +160,7 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
       <CanvasNavKey ref={canvasNavKeyRef} keyCaps={keyCaps} onKeyCapClick={handleClick} onKeyCapHover={setHoveredKey} />
       
       {/* グラデーションのオーバーレイ */}
-      <div className='gradientOverlay fixed inset-0 pointer-events-none' style={{ background: 'linear-gradient(0deg,rgba(250, 243, 225, 1) 0%, rgba(255, 255, 225, 0) 30%)', zIndex: 30, }} />
+      <div className='gradientOverlay fixed inset-0 pointer-events-none' style={{ background: 'linear-gradient(0deg,rgba(250, 243, 225, 1) 0%, rgba(255, 255, 225, 0) 48%)', zIndex: 30, }} />
 
       {/* タイトルテキスト */}
       <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} hideLoading={skipIntro} />

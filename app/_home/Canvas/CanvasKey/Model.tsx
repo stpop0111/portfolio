@@ -118,13 +118,14 @@ export function KeyCap({
     >
       <mesh geometry={geometry}>
         <MeshTransmissionMaterial
-          samples={6}
-          resolution={512}
-          transmission={0.85}
-          roughness={0.1}
-          thickness={0.6}
-          ior={1.45}
-          chromaticAberration={0.2}
+          samples={10}
+          resolution={768}
+          transmission={1}
+          roughness={0.02}
+          thickness={1}
+          ior={1.5}
+          chromaticAberration={0.15}
+          anisotropy={0}
           backside={true}
           color={keyCap.color}
         />
