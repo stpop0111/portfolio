@@ -1,6 +1,6 @@
 // React
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef, useState, type ComponentRef } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 // GSAP
 import gsap from 'gsap';
 // THREE
@@ -11,6 +11,39 @@ import type { Mesh } from 'three';
 // コンポーネント
 import type { KeyCapType } from './index';
 import type { ThemeName } from '../../../_components/Curtains/curtainPalettes';
+
+// キーキャップ全体の高さオフセット(下寄せ)
+const KEYCAP_BASE_Y = -0.35;
+
+/** 常時表示のラベル。ホバーで1文字ずつ上にスクロールしてオレンジのテキストに切り替わる */
+function KeyCapLabel({ label, hovered }: { label: string; hovered: boolean }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!wrapRef.current) return;
+    const cols = wrapRef.current.querySelectorAll('.labelCharCol');
+    // 2段組(通常色/オレンジ)の列を自身の高さの半分だけ動かして表示段を切り替える
+    gsap.to(cols, {
+      yPercent: hovered ? -50 : 0,
+      duration: 0.35,
+      ease: 'power2.out',
+      stagger: 0.03,
+    });
+  }, [hovered]);
+
+  return (
+    <div ref={wrapRef} className='pointer-events-none flex whitespace-nowrap text-4xl font-corporate-a italic font-medium leading-[1.15]'>
+      {label.split('').map((char, i) => (
+        <span key={i} className='inline-block overflow-hidden' style={{ height: '1.15em' }}>
+          <span className='labelCharCol block'>
+            <span className='block text-zinc-950'>{char === ' ' ? ' ' : char}</span>
+            <span className='block text-[#fa8112]'>{char === ' ' ? ' ' : char}</span>
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export function KeyCap({
   keyCap, 
@@ -117,7 +150,7 @@ export function KeyCap({
     // lerp...なめらかさ
     const lerpFactor = 0.1;
     groupRef.current.position.x += (keyCap.x + hoverPosX - groupRef.current.position.x) * lerpFactor;
-    groupRef.current.position.y += (baseY + hoverPosY - groupRef.current.position.y) * lerpFactor;
+    groupRef.current.position.y += (KEYCAP_BASE_Y + baseY + hoverPosY - groupRef.current.position.y) * lerpFactor;
     groupRef.current.rotation.x += (targetRotX - groupRef.current.rotation.x) * lerpFactor;
     groupRef.current.rotation.y += (targetRotY - groupRef.current.rotation.y) * lerpFactor;
     groupRef.current.rotation.z += (targetRotZ - groupRef.current.rotation.z) * lerpFactor;
@@ -127,7 +160,7 @@ export function KeyCap({
 
     // 各キーキャップのメッシュ
     <group
-      ref={groupRef} position={[keyCap.x, 0, 0]} rotation-x={0.3}
+      ref={groupRef} position={[keyCap.x, KEYCAP_BASE_Y, 0]} rotation-x={0.3}
       onPointerOver={(e) => { setHovered(true); e.stopPropagation(); onHover(keyCap.label); }}
       onPointerOut={() => { setHovered(false); onHover(null) }}
       onClick={(e) => { e.stopPropagation(); handleClick(); onHover(null); }}
@@ -150,14 +183,10 @@ export function KeyCap({
         />
       </mesh>
 
-      {/* キーキャップをホバーすれば表示されるラベル */}
-      {hovered && (
-        <Html position={[0, 1, 0]} center>
-          <div className='text-zinc-950 relative rounded-full whitespace-nowrap text-4xl font-corporate-a italic font-medium' >
-            {keyCap.label}
-          </div>
-        </Html>
-      )}
+      {/* キーキャップの上のラベル(常時表示、ホバーで文字が上にスクロールしてオレンジに切り替わる) */}
+      <Html position={[0, 1, 0]} center style={{ pointerEvents: 'none' }}>
+        <KeyCapLabel label={keyCap.label} hovered={hovered} />
+      </Html>
     </group>
   );
 }

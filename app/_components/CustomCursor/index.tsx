@@ -64,10 +64,11 @@ export default function CustomCursor() {
 
   return (
     // overflow-visible: 伸びた時にviewBoxの外へはみ出しても切れないようにする
-    <svg ref={cursorRef} viewBox={`0 0 ${SIZE} ${SIZE}`} className='fixed top-0 left-0 w-8 h-8 pointer-events-none z-9999 overflow-visible'>
+    // mix-blend-difference + 白ストローク = 背後の色の反転色で描画される
+    <svg ref={cursorRef} viewBox={`0 0 ${SIZE} ${SIZE}`} className='fixed top-0 left-0 w-8 h-8 pointer-events-none z-9999 overflow-visible mix-blend-difference'>
       <g ref={stretchRef}>
         {/* 塗りなし・線のみ。vector-effectで伸縮しても線の太さを画面上1.5pxに保つ */}
-        <circle cx='50' cy='50' r='40' fill='none' stroke='#222' strokeWidth='1.5' vectorEffect='non-scaling-stroke' />
+        <circle cx='50' cy='50' r='40' fill='none' stroke='#fff' strokeWidth='1.5' vectorEffect='non-scaling-stroke' />
       </g>
     </svg>
   );
