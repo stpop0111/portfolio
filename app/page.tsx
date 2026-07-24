@@ -51,10 +51,10 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
 
   const keyCaps: { label: string; x: number; color: string; textColor: string; path: string; theme: ThemeName; }[]
   = [
-      { label: 'ABOUT ME',       x: -3, color: '#222222', textColor: '#222',    path: '/about',    theme: 'aboutMe' },
-      { label: 'WORKS',          x: -1, color: '#FA8112', textColor: '#f7f7f7', path: '/works',    theme: 'works' },
-      { label: 'CREATIVE',       x:  1, color: '#F5E7C6', textColor: '#222',    path: '/creative', theme: 'creative' },
-      { label: 'ORIGINAL WORKS', x:  3, color: '#FAF3E1', textColor: '#f7f7f7', path: '/original', theme: 'originalWorks' },
+      { label: 'ABOUT ME',       x: -3, color: '#ffffff', textColor: '#222',    path: '/about',    theme: 'aboutMe' },
+      { label: 'WORKS',          x: -1, color: '#ffffff', textColor: '#f7f7f7', path: '/works',    theme: 'works' },
+      { label: 'CREATIVE',       x:  1, color: '#ffffff', textColor: '#222',    path: '/creative', theme: 'creative' },
+      { label: 'ORIGINAL WORKS', x:  3, color: '#ffffff', textColor: '#f7f7f7', path: '/original', theme: 'originalWorks' },
     ];
 
   // ---------------------------

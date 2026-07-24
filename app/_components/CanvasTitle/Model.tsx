@@ -192,7 +192,7 @@ export function TitleScene({
             background={transmissionBackground}
             side={DoubleSide}
             backside={true}
-            color='#ffffff'
+            color='#fa8112'
           />
         </mesh>
         {postText && (

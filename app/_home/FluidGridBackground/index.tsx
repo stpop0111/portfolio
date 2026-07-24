@@ -1,20 +1,47 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useControls, Leva } from 'leva';
 import { FluidSim, toSimCoords, createProgram, bindTex, blitToScreen, setupFullscreenTriangle, DISPLAY, FLUID_PARAMS } from './fluidSim';
 
 const SIM_RES = 160;
 
 // グリッド固有の見た目パラメータ(歪みの強さ自体はFLUID_PARAMSで背景・タイトル共通)
 const GRID_PARAMS = {
-  gridSpacing: 260,   // 交点の間隔(広め)
+  gridSpacing: 390,   // 交点の間隔(広め)
   lineOpacity: 0.07,  // 線そのものはごく薄く
   crossOpacity: 0.28, // 交点の十字だけ少しはっきり
   crossSize: 7,       // 十字の腕の長さ(px, dpr倍する前)
+  crossGap: 18,       // 十字の周りに線を引かない余白(px, dpr倍する前)
 };
 
 export function FluidGridBackground({ active = true }: { active?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const redrawGridRef = useRef<(() => void) | null>(null);
+
+  const fluidControls = useControls('波紋', {
+    strength: { value: FLUID_PARAMS.strength, min: 0, max: 3, step: 0.01 },
+    radius: { value: FLUID_PARAMS.radius, min: 0.3, max: 5, step: 0.1 },
+    dissipation: { value: FLUID_PARAMS.dissipation, min: 0.2, max: 10, step: 0.1 },
+    curlStrength: { value: FLUID_PARAMS.curlStrength, min: 0, max: 40, step: 1 },
+    chromatic: { value: FLUID_PARAMS.chromatic, min: 0, max: 2, step: 0.05 },
+  });
+  const gridControls = useControls('グリッド', {
+    gridSpacing: { value: GRID_PARAMS.gridSpacing, min: 100, max: 700, step: 10 },
+    lineOpacity: { value: GRID_PARAMS.lineOpacity, min: 0, max: 1, step: 0.01 },
+    crossOpacity: { value: GRID_PARAMS.crossOpacity, min: 0, max: 1, step: 0.01 },
+    crossSize: { value: GRID_PARAMS.crossSize, min: 2, max: 24, step: 1 },
+    crossGap: { value: GRID_PARAMS.crossGap, min: 0, max: 80, step: 1 },
+  });
+
+  // sim側は生JSオブジェクトを毎フレーム直接参照しているので、ここで値を反映するだけでよい
+  Object.assign(FLUID_PARAMS, fluidControls);
+  Object.assign(GRID_PARAMS, gridControls);
+
+  // グリッドの見た目だけを再描画(シミュレーション本体は再構築しない)
+  useEffect(() => {
+    redrawGridRef.current?.();
+  }, [gridControls.gridSpacing, gridControls.lineOpacity, gridControls.crossOpacity, gridControls.crossSize, gridControls.crossGap]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -41,13 +68,24 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
 
       const spacing = GRID_PARAMS.gridSpacing * dpr;
       const crossSize = GRID_PARAMS.crossSize * dpr;
+      const gap = Math.min(GRID_PARAMS.crossGap * dpr, spacing / 2 - 1);
 
-      // ごく薄い格子線
+      // 交点の周りに余白を空けた格子線( ---- 十 ---- )
       pctx.strokeStyle = `rgba(34,34,34,${GRID_PARAMS.lineOpacity})`;
       pctx.lineWidth = Math.max(1, dpr);
       pctx.beginPath();
-      for (let x = 0; x <= w; x += spacing) { pctx.moveTo(x, 0); pctx.lineTo(x, h); }
-      for (let y = 0; y <= h; y += spacing) { pctx.moveTo(0, y); pctx.lineTo(w, y); }
+      for (let y = 0; y <= h; y += spacing) {
+        for (let x = 0; x < w; x += spacing) {
+          pctx.moveTo(x + gap, y);
+          pctx.lineTo(x + spacing - gap, y);
+        }
+      }
+      for (let x = 0; x <= w; x += spacing) {
+        for (let y = 0; y < h; y += spacing) {
+          pctx.moveTo(x, y + gap);
+          pctx.lineTo(x, y + spacing - gap);
+        }
+      }
       pctx.stroke();
 
       // 交点だけ十字マーク
@@ -71,6 +109,10 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
       gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE);
       gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE);
     }
+    redrawGridRef.current = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      drawGrid(canvas!.width, canvas!.height, dpr);
+    };
 
     // ---- ポインター ----
     const pointer = { x: 0, y: 0 };
@@ -158,12 +200,14 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
       window.removeEventListener('pointerdown', onMove);
       window.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('visibilitychange', onVisibility);
+      redrawGridRef.current = null;
     };
   }, [active]);
 
   return (
     <div className='fixed inset-0 z-0 pointer-events-none'>
       <canvas ref={canvasRef} className='block h-full w-full' />
+      <Leva collapsed titleBar={{ title: '波紋の調整(確認用)' }} />
     </div>
   );
 }
