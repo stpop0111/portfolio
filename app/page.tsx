@@ -138,11 +138,11 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
         // カーテン(exit)は140vhの幕が上へ抜けるため、画面下端が見え始めるのは約0.6秒後。
         // それに合わせて登場側を遅らせ、幕が上がるのと一緒に動いて見えるようにする。
         // .fromはimmediateRenderで開始前から初期状態(画面外)が適用されるので、遅延中に完成形が見えることはない
-        const tl = gsap.timeline({ delay: 0.6 });
-        tl.from(canvasPCRef.current!.position, { y: -2, duration: 2.0, ease: 'power4.inOut', immediateRender: true }, '<')
-          .from(canvasNavKeyRef.current, { y: '+100%', duration: 2.0, ease: 'power2.inOut', immediateRender: true }, '<')
-          .to(canvasTitleRef.current, { y: '-120%', duration: 2.0, ease: 'power2.inOut' }, '<')
-          .fromTo( '.gradientOverlay', { opacity: 0, y: '+100%' }, { opacity: 1, y: 0, duration: 1.6, ease: 'power2.out' }, '<', );
+        const tl = gsap.timeline({ delay: 0.5 });
+        tl.from(canvasPCRef.current!.position, { y: -2, duration: 1.6, ease: 'power4.inOut', immediateRender: true }, '<')
+          .from(canvasNavKeyRef.current, { y: '+100%', duration: 1.6, ease: 'power2.inOut', immediateRender: true }, '<')
+          .to(canvasTitleRef.current, { y: '-120%', duration: 1.6, ease: 'power2.inOut' }, '<')
+          .fromTo( '.gradientOverlay', { opacity: 0, y: '+100%' }, { opacity: 1, y: 0, duration: 1.4, ease: 'power2.out' }, '<', );
       }
     }, { dependencies: [phase, skipIntro, modelReady] },
   );

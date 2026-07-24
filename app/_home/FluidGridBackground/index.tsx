@@ -131,7 +131,8 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
       lastX = x; lastY = y; hasLast = true;
       pointer.x = x; pointer.y = y;
       parallax.tx = (e.clientX / window.innerWidth - 0.5) * PARALLAX_RANGE;
-      parallax.ty = (e.clientY / window.innerHeight - 0.5) * PARALLAX_RANGE;
+      // Y軸は反転(カーソルが下ほどグリッドは上へ動く)
+      parallax.ty = -(e.clientY / window.innerHeight - 0.5) * PARALLAX_RANGE;
     }
     function onLeave() { hasLast = false; }
     window.addEventListener('pointermove', onMove, { passive: true });
