@@ -1,12 +1,12 @@
 // React
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type ComponentRef } from 'react';
 // GSAP
 import gsap from 'gsap';
 // THREE
 import { Html, MeshTransmissionMaterial, useGLTF } from '@react-three/drei';
 import { Color } from 'three';
-import type { Group } from 'three';
+import type { Group, MeshPhysicalMaterial } from 'three';
 import type { Mesh } from 'three';
 // コンポーネント
 import type { KeyCapType } from './index';
@@ -28,6 +28,10 @@ export function KeyCap({
   // MeshTransmissionMaterialは背景を指定しないと透過した先に何もなく黒く見えるため、
   // CanvasTitleと同様に色を渡してガラスの向こうに見える色にする
   const transmissionBackground = useMemo(() => new Color(keyCap.color), [keyCap.color]);
+  // ホバー時の色変化(fの文字と同じアクセントオレンジへ、useFrameのlerpでじわっと)
+  const matRef = useRef<ComponentRef<typeof MeshTransmissionMaterial>>(null);
+  const baseColor = useMemo(() => new Color(keyCap.color), [keyCap.color]);
+  const hoverColor = useMemo(() => new Color('#fa8112'), []);
 
   // ---------------------------
   // クリックアニメーション
@@ -76,6 +80,14 @@ export function KeyCap({
   const [hovered, setHovered] = useState<boolean>(false);
 
   useFrame((state, delta) => {
+    // 色のじわっと変化(ホバー中はオレンジ、離れたら元の色へ)
+    const mat = matRef.current as unknown as MeshPhysicalMaterial | null;
+    if (mat) {
+      const target = hovered ? hoverColor : baseColor;
+      mat.color.lerp(target, 0.08);
+      transmissionBackground.lerp(target, 0.08);
+    }
+
     if (!groupRef.current || clicked) return;
     if (!hovered) { selfTimeRef.current += delta; }
 
@@ -121,7 +133,9 @@ export function KeyCap({
       onClick={(e) => { e.stopPropagation(); handleClick(); onHover(null); }}
     >
       <mesh geometry={geometry}>
+        {/* colorは初期値のみ。以降はuseFrameのlerpで動かす(r3fは値が変わらないpropsを再適用しない) */}
         <MeshTransmissionMaterial
+          ref={matRef}
           samples={10}
           resolution={768}
           transmission={0.95}

@@ -8,6 +8,7 @@ const SIM_RES = 160;
 
 // グリッド固有の見た目パラメータ(歪みの強さ自体はFLUID_PARAMSで背景・タイトル共通)
 const GRID_PARAMS = {
+  bgColor: '#faf3e1', // 背景色
   gridSpacing: 390,   // 交点の間隔(広め)
   lineOpacity: 0.07,  // 線そのものはごく薄く
   crossOpacity: 0.28, // 交点の十字だけ少しはっきり
@@ -27,6 +28,7 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
     chromatic: { value: FLUID_PARAMS.chromatic, min: 0, max: 2, step: 0.05 },
   });
   const gridControls = useControls('グリッド', {
+    bgColor: { value: GRID_PARAMS.bgColor },
     gridSpacing: { value: GRID_PARAMS.gridSpacing, min: 100, max: 700, step: 10 },
     lineOpacity: { value: GRID_PARAMS.lineOpacity, min: 0, max: 1, step: 0.01 },
     crossOpacity: { value: GRID_PARAMS.crossOpacity, min: 0, max: 1, step: 0.01 },
@@ -41,7 +43,7 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
   // グリッドの見た目だけを再描画(シミュレーション本体は再構築しない)
   useEffect(() => {
     redrawGridRef.current?.();
-  }, [gridControls.gridSpacing, gridControls.lineOpacity, gridControls.crossOpacity, gridControls.crossSize, gridControls.crossGap]);
+  }, [gridControls.bgColor, gridControls.gridSpacing, gridControls.lineOpacity, gridControls.crossOpacity, gridControls.crossSize, gridControls.crossGap]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -63,7 +65,7 @@ export function FluidGridBackground({ active = true }: { active?: boolean }) {
     function drawGrid(w: number, h: number, dpr: number) {
       pageCanvas.width = w;
       pageCanvas.height = h;
-      pctx.fillStyle = '#faf3e1';
+      pctx.fillStyle = GRID_PARAMS.bgColor;
       pctx.fillRect(0, 0, w, h);
 
       const spacing = GRID_PARAMS.gridSpacing * dpr;
