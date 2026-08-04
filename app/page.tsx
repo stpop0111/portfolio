@@ -19,7 +19,10 @@ import { ReloadButton } from './_home/ReloadButton';
 import { HeroText } from './_home/HeroText';
 import { CanvasPC } from './_home/Canvas/CanvasPC'
 import { CanvasNavKey } from './_home/Canvas/CanvasKey';
+import { GridBackground } from './_components/GridBackground';
+import { FluidTitleWarp } from './_components/FluidEffect/FluidTitleWarp';
 
+// プリロード
 useGLTF.preload('/models/model__keycap.glb');
 useGLTF.preload('/models/model__pc.glb');
 useGLTF.preload('/models/model__letter-f.glb');
@@ -34,7 +37,7 @@ function PageInner() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className='fixed inset-0 bg-zinc-50 z-9999' />} >
+    <Suspense fallback={<div className='fixed inset-0 bg-[#0d0d0d] z-9999' />} >
       <PageInner />
     </Suspense>
   )
@@ -144,27 +147,33 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   // ---------------------------
 
   return (
-    <main className='flex flex-1 items-center justify-center bg-zinc-50 text-zinc-50'>
+    <main className='flex flex-1 items-center justify-center bg-[#0d0d0d] text-zinc-50'>
+      <GridBackground active={phase === 'hero'} />
       {/* カーテン遷移（各下層から） */}
       <Curtains show={!!transitionTo} anchor='bottom' baseZIndex={100} motion={'enter'} colors={navPaletteColors} onComplete={() => transitionTo && router.push(transitionTo)} />
       {/* カーテン遷移（各下層へ） */}
-      <Curtains show={showCurtain} anchor='top' motion={phase === 'hero' ? 'exit' : 'none'} colors={['bg-zinc-700', 'bg-zinc-600', 'bg-zinc-500', 'bg-zinc-400', 'bg-zinc-300', 'bg-zinc-200']} onComplete={() => setShowCurtain(false)} />
-      
+      <Curtains show={showCurtain} anchor='top' motion={phase === 'hero' ? 'exit' : 'none'} colors={['bg-zinc-950', 'bg-zinc-900', 'bg-zinc-800', 'bg-zinc-800', 'bg-zinc-900', 'bg-zinc-950']} onComplete={() => setShowCurtain(false)} />
+
       {/* パソコンとキーキャップ */}
       <CanvasPC ref={canvasPCRef} hoveredKey={hoveredKey} onReady={handleModelReady} />
       <CanvasNavKey ref={canvasNavKeyRef} keyCaps={keyCaps} onKeyCapClick={handleClick} onKeyCapHover={setHoveredKey} />
-      
+
       {/* グラデーションのオーバーレイ */}
-      <div className='gradientOverlay fixed inset-0 pointer-events-none' style={{ background: 'linear-gradient(0deg,rgba(250, 243, 225, 1) 0%, rgba(255, 255, 225, 0) 30%)', zIndex: 30, }} />
+      <div className='gradientOverlay fixed inset-0 pointer-events-none' style={{ background: 'linear-gradient(0deg, rgba(13,13,13,1) 0%, rgba(13,13,13,0) 45%)', zIndex: 30, }} />
 
       {/* タイトルテキスト */}
       <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} hideLoading={skipIntro} />
-      <CanvasTitle ref={canvasTitleRef} phase={phase} skipIntro={skipIntro} modelPath='/models/model__letter-f.glb' modelName='letter_f' bgColor='#fafafa' enableHeroColorChange wrapperPreset='main'
-        preText={{ text: 'Port', position: [-0.2, 0, -0.5], anchorX: 'right' }}
-        postText={{ text: 'olio', position: [0.2, 0, -0.5], anchorX: 'left' }}
+      <CanvasTitle ref={canvasTitleRef} phase={phase} skipIntro={skipIntro} modelPath='/models/model__letter-f.glb' modelName='letter_f' bgColor='#fafafa' visuallyHidden enableHeroColorChange wrapperPreset='main'
+        preText  = {{ text: 'Port', position: [-0.2, 0, -0.5], anchorX: 'right', textColor:'#fafafa' }}
+        postText = {{ text: 'olio', position: [0.2, 0, -0.5], anchorX: 'left' , textColor:'#fafafa'}}
+      />
+      <FluidTitleWarp
+        active={phase === 'title' || phase === 'hero'}
+        sourceRef={canvasTitleRef}
+        className={`fixed inset-0 h-full w-full pointer-events-none ${skipIntro ? 'z-80' : 'z-92'}`}
       />
       {/* ページリロードボタン */}
       {isRefreshing && phase === 'loading' && ( <div className='fixed z-50 bottom-8 left-1/2 -translate-x-1/2'><ReloadButton /></div> )}
-    </main>
+  </main>
   );
 }

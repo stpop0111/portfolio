@@ -23,7 +23,7 @@ export function HeroText({
               </span>
             ))}
           </h2>
-            <p className='progressText font-futura fixed bottom-0 right-0 leading-64 text-[256px] font-bold -tracking-widest text-zinc-950'>{progressCount}</p>
+            <p className='progressText font-futura fixed bottom-0 right-0 leading-64 text-[256px] font-bold -tracking-widest text-zinc-100'>{progressCount}</p>
         </div>
       )}
     </div>

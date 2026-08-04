@@ -23,7 +23,7 @@ export function PC({
     const monitor = nodes.monitor as Group;
     if (monitor) {
       monitorRef.current = monitor;
-      monitor.rotation.set(0, Math.PI / 4, 0);
+      monitor.rotation.set(0, 0, 0);
     }
   }, [nodes]);
 
@@ -80,10 +80,23 @@ export function PC({
           obj.material = new MeshPhysicalMaterial({
             color: oldMat.color,
             map: oldMat.map,
-            roughness: 0.1,
+            // ---- PBR：射出成形プラスチックの実測値に寄せる ----
+            // roughness 0.35 前後が「サラサラした樹脂」。低すぎると鏡、高すぎるとゴム
+            roughness: 0.34,
             metalness: 0,
-            clearcoat: 0.8,
-            clearcoatRoughness: 0.3,
+            // 誘電体（非金属）の垂直入射反射率は物理定数で 0.5 が基準。
+            // ここを盛ると「高級感」ではなく安っぽい光沢になる
+            reflectivity: 0.5,
+            // 成形品の表面に薄く残るコート層。わずかに入れると製品感が出る
+            clearcoat: 0.35,
+            clearcoatRoughness: 0.35,
+            // 微細な起伏（金型のシボ）。完璧に平らな面は現実に存在しない
+            sheen: 0.05,
+            sheenRoughness: 0.9,
+            sheenColor: new Color('#ffffff'),
+            // 縁で光が回り込む量。実写のプラは輪郭がわずかに明るい
+            iridescence: 0,
+            envMapIntensity: 1.15,
           });
         }
       }
@@ -109,7 +122,7 @@ export function PC({
   useFrame((state, delta) => {
     if (!monitorRef.current) return;
   
-    const ROT_BASE_Y = Math.PI / 4;
+    const ROT_BASE_Y = 0;
     const ROT_FOLLOW_Y = Math.PI / 4;
     const lerpFactor = 0.1;
     const targetRotY = ROT_BASE_Y + pointerRef.current.x * ROT_FOLLOW_Y;
@@ -213,32 +226,29 @@ export function PC({
     }
     textureRef.current.needsUpdate = true;
     // ---------------------------
-
-    // カメラのポインター追従
-    // ---------------------------
-    const CAMERA_SETTINGS = {
-      'BASE_X': 3,
-      'BASE_Y': -0.4,
-      'FOLLOW_X': 1.5,
-      'FOLLOW_Y': -0.5,
-      'LERP':0.05
-    }
-
-    const targetCamX = CAMERA_SETTINGS.BASE_X + pointerRef.current.x * CAMERA_SETTINGS.FOLLOW_X;
-    const targetCamY = CAMERA_SETTINGS.BASE_Y + pointerRef.current.y * CAMERA_SETTINGS.FOLLOW_Y;
-
-    state.camera.position.x += (targetCamX - state.camera.position.x) * CAMERA_SETTINGS.LERP;
-    state.camera.position.y += (targetCamY - state.camera.position.y) * CAMERA_SETTINGS.LERP;
-    state.camera.lookAt(0, 0.6, 0);
-    // ---------------------------
-
   });
 
   return (
     <group ref={groupRef}>
-      <mesh position={[0, -1, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.8, 1, 1.8]} />
-        <meshPhysicalMaterial color='#888' roughness={0.4} clearcoat={0.3} clearcoatRoughness={0.2} />
+      {/* 影を受けるためだけの床。
+          shadowMaterial は「影の部分だけ黒く描き、それ以外は完全に透明」という
+          特殊なマテリアル。背景を隠さずに落ち影だけを見せられる。
+          台座の底面（y = -1.5）のわずかに下に敷いて Zファイティングを避ける */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.51, 0]} receiveShadow>
+        <planeGeometry args={[40, 40]} />
+        <shadowMaterial opacity={0.92} />
+      </mesh>
+
+      <mesh position={[1.5, -1, -1.5]} rotation={[0, Math.PI / 4, 0]} castShadow receiveShadow>
+        <boxGeometry args={[5, 1, 3]} />
+        <meshPhysicalMaterial
+          color='#5c5c5c'
+          roughness={0.82}      // 石やマットな塗装。完全な 1.0 にすると質感が消える
+          metalness={0}
+          reflectivity={0.35}   // 粗い面ほど正反射は弱い
+          clearcoat={0}
+          envMapIntensity={0.6}
+        />
       </mesh>
       <primitive object={scene} position={[0, -0.5, 0]} scale={1} />
     </group>

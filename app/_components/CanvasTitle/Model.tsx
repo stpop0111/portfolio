@@ -109,9 +109,9 @@ export function TitleScene({
         const tl = gsap.timeline();
         if (finalTextFrontRef.current?.material) {
           tl.to((finalTextFrontRef.current.material as MeshStandardMaterial).color, {
-            r: 0.1,
-            g: 0.1,
-            b: 0.1,
+            r: 0.98,
+            g: 0.98,
+            b: 0.98,
             duration: 1.2,
             ease: 'power2.inOut',
           });
@@ -119,7 +119,7 @@ export function TitleScene({
         if (finalTextBackRef.current?.material) {
           tl.to(
             (finalTextBackRef.current.material as MeshStandardMaterial).color,
-            { r: 0.1, g: 0.1, b: 0.1, duration: 1.2, ease: 'power2.inOut' },
+            { r: 0.98, g: 0.98, b: 0.98, duration: 1.2, ease: 'power2.inOut' },
             '<',
           );
         }
@@ -166,7 +166,7 @@ export function TitleScene({
             font='/fonts/Urbanist-MediumItalic.ttf'
             position={preText.position}
             fontSize={preText.fontSize ?? 1.6}
-            color={ skipIntro ? '#1a1a1a' : (preText.textColor ?? '#fafafa') }
+            color={ preText.textColor ?? '#fafafa' }
             anchorX={preText.anchorX ?? 'right'}
             anchorY='middle'
             material-transparent
@@ -201,7 +201,7 @@ export function TitleScene({
             font='/fonts/Urbanist-MediumItalic.ttf'
             position={postText.position}
             fontSize={postText.fontSize ?? 1.6}
-            color={ skipIntro ? '#1a1a1a' : (postText.textColor ?? '#fafafa') }
+            color={ postText.textColor ?? '#fafafa' }
             anchorX={postText.anchorX ?? 'left'}
             anchorY='middle'
             material-transparent

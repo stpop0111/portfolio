@@ -59,6 +59,7 @@ type CanvasTitleProps = TitleSceneProps & {
   ref?: React.RefObject<HTMLDivElement | null>;
   shrinkMoveAnim?: AnimateConfig;
   wrapperPreset?: WrapperPreset;
+  visuallyHidden?: boolean;
 };
 
 /** ------------------------ 型定義 ------------------------ **/
@@ -67,6 +68,7 @@ export default function CanvasTitle({
   ref: wrapperRef,
   shrinkMoveAnim,
   wrapperPreset = 'main',
+  visuallyHidden = false,
   ...sceneProps
 }: CanvasTitleProps) {
   const groupRef = useRef<Group>(null);
@@ -89,6 +91,7 @@ export default function CanvasTitle({
       inner = 'w-full h-[40vh]';
       break;
   }
+  if (visuallyHidden) wrapper += ' opacity-0 pointer-events-none';
 
   /* 表示アニメーション
   --------------------------------------- */
@@ -188,7 +191,7 @@ export default function CanvasTitle({
   return (
     <div ref={wrapperRef} className={wrapper}>
       <div className={inner}>
-        <Canvas orthographic camera={{ position: [0, 0, 5], zoom: 100 }}>
+        <Canvas orthographic camera={{ position: [0, 0, 5], zoom: 100 }} gl={{preserveDrawingBuffer: true}}>
           <Suspense fallback={null}>
             <Environment preset='warehouse' environmentIntensity={2} />
             <ambientLight intensity={0.5} />
