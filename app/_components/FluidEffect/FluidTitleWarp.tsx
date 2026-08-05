@@ -27,15 +27,14 @@ export function FluidTitleWarp({
       const titleCanvas = source?.querySelector('canvas');
       if (!source || !titleCanvas) return;
 
-      const wrapRect = ctx.canvas.getBoundingClientRect
-        ? { left: 0, top: 0 } // オフスクリーンなので基準は自分の左上
-        : { left: 0, top: 0 };
+      // オフスクリーンキャンバスの原点は画面左上と一致するので、
+      // タイトルの画面座標をそのまま dpr 倍すればよい
       const titleRect = source.getBoundingClientRect();
 
       ctx.drawImage(
         titleCanvas,
-        (titleRect.left - wrapRect.left) * dpr,
-        (titleRect.top - wrapRect.top) * dpr,
+        titleRect.left * dpr,
+        titleRect.top * dpr,
         titleRect.width * dpr,
         titleRect.height * dpr,
       );
@@ -44,13 +43,6 @@ export function FluidTitleWarp({
   );
 
   return (
-    <FluidCanvas
-      active={active}
-      simRes={96}
-      alpha
-      redrawOnEveryFrame
-      drawSource={drawSource}
-      className={className}
-    />
+    <FluidCanvas active={active} simRes={96} alpha redrawOnEveryFrame drawSource={drawSource} className={className} />
   );
 }
