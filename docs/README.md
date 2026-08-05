@@ -16,6 +16,7 @@
 | ファイル | 内容 |
 |---|---|
 | [3d-rendering-guide.md](./3d-rendering-guide.md) | 3Dを「本物」に見せる設計。Lightformer、PBR値、キアロスクーロ、トーンマッピング |
+| [herofluidlesson.md](./herofluidlesson.md) | GPU流体シミュの原理と実装（全2477行）。付録Aに関係ファイルの全ソース収録 |
 
 ## その他
 
