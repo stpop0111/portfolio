@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useRef, useState } from 'react';
 // GSAP
 import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 // THREE
 import { Html, MeshTransmissionMaterial, useGLTF } from '@react-three/drei';
 import type { Group } from 'three';
@@ -15,10 +16,12 @@ export function KeyCap({
   keyCap, 
   onClick,
   onHover,
+  phase,
   } : { 
     keyCap: KeyCapType; 
     onClick: (path: string, theme: ThemeName) => void;
     onHover: (label: string | null) => void;
+    phase: string;
   }) {
   const groupRef = useRef<Group>(null);
   const { nodes } = useGLTF('/models/model__keycap.glb');
@@ -65,11 +68,12 @@ export function KeyCap({
     rotZPhase: Math.random() * Math.PI * 2,
     rotZSpeed: FLOAT_CONFIG.rotZ.speed[0] + Math.random() * FLOAT_CONFIG.rotZ.speed[1],
     rotZAmp: FLOAT_CONFIG.rotZ.amp[0] + Math.random() * FLOAT_CONFIG.rotZ.amp[1],
+    // 登場アニメーション用；ランダム数
+    appearDelay: Math.random() * 0.5,
   }));
 
-  // フローティングアニメーション 
-  // 計算式：((経過時間*速度の値)＋初期開始)*波の幅
-  const [hovered, setHovered] = useState<boolean>(false);
+  const [hovered, setHovered] = useState<boolean>(false); // フローティングアニメーション 
+  const appearOffsetRef = useRef({ y: -2.5 })
 
   useFrame((state, delta) => {
     if (!groupRef.current || clicked) return;
@@ -101,11 +105,25 @@ export function KeyCap({
     // lerp...なめらかさ
     const lerpFactor = 0.1;
     groupRef.current.position.x += (keyCap.x + hoverPosX - groupRef.current.position.x) * lerpFactor;
-    groupRef.current.position.y += (baseY + hoverPosY - groupRef.current.position.y) * lerpFactor;
+    groupRef.current.position.y += (baseY + hoverPosY + appearOffsetRef.current.y - groupRef.current.position.y) * lerpFactor;
     groupRef.current.rotation.x += (targetRotX - groupRef.current.rotation.x) * lerpFactor;
     groupRef.current.rotation.y += (targetRotY - groupRef.current.rotation.y) * lerpFactor;
     groupRef.current.rotation.z += (targetRotZ - groupRef.current.rotation.z) * lerpFactor;
   });
+
+  // 登場アニメーション
+  useGSAP(() => {
+    if (!groupRef.current) return;
+    if (phase === 'hero') {
+    const tl = gsap.timeline({ delay: 1.0 });
+      tl.to(appearOffsetRef.current, {
+        y: 0,
+        duration: 1.2,
+        delay: offsets.appearDelay,
+        ease: 'back.out(1.7)',
+      })
+    }
+  },{ dependencies: [phase] });
 
   return (
 

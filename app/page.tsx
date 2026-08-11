@@ -136,11 +136,10 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   useGSAP(() => {
       if (phase === 'hero') {
         if (!canvasPCRef.current || !canvasNavKeyRef.current || !canvasTitleRef.current) return;
-        const tl = gsap.timeline();
-        tl.from(canvasPCRef.current!.position, { y: -2, duration: 1.2, ease: 'power4.inOut' }, '<')
-          .from(canvasNavKeyRef.current, { y: '+100%', duration: 1.2, ease: 'power2.inOut' }, '<')
-          .to(canvasTitleRef.current, { y: '-120%', duration: 1.2, ease: 'power2.inOut' }, '<')
-          .fromTo( '.gradientOverlay', { opacity: 0, y: '+100%' }, { opacity: 1, y: 0, duration: 1, ease: 'power2.out' }, '<', ); 
+        const tl = gsap.timeline({ delay: 0.7 });
+        tl.from(canvasPCRef.current!.position, { y: -1, duration: 1.2, ease: 'power4.inOut' }, '<')
+          .to(canvasTitleRef.current, { y: '-75%', duration: 1.2, ease: 'power2.inOut' }, '<')
+          .fromTo('.gradientOverlay', { opacity: 0 }, { opacity: 1, duration: 1, ease: 'power2.inOut' }, '<'); 
       }
     }, { dependencies: [phase, skipIntro, modelReady] },
   );
@@ -156,7 +155,7 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
 
       {/* パソコンとキーキャップ */}
       <CanvasPC ref={canvasPCRef} hoveredKey={hoveredKey} onReady={handleModelReady} />
-      <CanvasNavKey ref={canvasNavKeyRef} keyCaps={keyCaps} onKeyCapClick={handleClick} onKeyCapHover={setHoveredKey} />
+      <CanvasNavKey ref={canvasNavKeyRef} keyCaps={keyCaps} onKeyCapClick={handleClick} onKeyCapHover={setHoveredKey} phase={phase}/>
 
       {/* グラデーションのオーバーレイ */}
       <div className='gradientOverlay fixed inset-0 pointer-events-none' style={{ background: 'linear-gradient(0deg, rgba(13,13,13,1) 0%, rgba(13,13,13,0) 45%)', zIndex: 30, }} />

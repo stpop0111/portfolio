@@ -229,11 +229,7 @@ export function PC({
   });
 
   return (
-    <group ref={groupRef}>
-      {/* 影を受けるためだけの床。
-          shadowMaterial は「影の部分だけ黒く描き、それ以外は完全に透明」という
-          特殊なマテリアル。背景を隠さずに落ち影だけを見せられる。
-          台座の底面（y = -1.5）のわずかに下に敷いて Zファイティングを避ける */}
+    <group ref={groupRef}>１
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.51, 0]} receiveShadow>
         <planeGeometry args={[40, 40]} />
         <shadowMaterial opacity={0.92} />

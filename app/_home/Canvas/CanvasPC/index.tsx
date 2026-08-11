@@ -23,7 +23,7 @@ export function CanvasPC({
   return (
     <div className='fixed inset-0 z-30 pointer-events-none'>
       <Canvas
-        orthographic camera={{ position: [0, -0.2, 3], zoom: 450 }}
+        orthographic camera={{ position: [0, -0.05, 2], zoom: 360 }}
         shadows='soft'
         // ACESFilmic：ハイライトが白飛びせず滑らかに落ちる映画用のトーンカーブ。
         // これが無いと明部が真っ白に潰れて「CGっぽさ」の主因になる
@@ -31,6 +31,7 @@ export function CanvasPC({
         onCreated={({ camera, gl }) => {
           camera.lookAt(0, 0.6, 0);
           gl.outputColorSpace = THREE.SRGBColorSpace;
+          gl.setPixelRatio(1);
         }}
       >
         {/* ==== 環境（映り込みの素） ====================================

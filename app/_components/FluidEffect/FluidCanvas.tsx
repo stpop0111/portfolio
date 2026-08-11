@@ -190,7 +190,8 @@ export function FluidCanvas({
     document.addEventListener('visibilitychange', onVisibility);
 
     function resize() {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // 流体はボヤッとした表現なので等倍で十分。Retina で 2 にすると負荷が4倍になる
+      dpr = 1;
       const rect = canvas!.getBoundingClientRect();
       canvas!.width = Math.max(1, Math.round(rect.width * dpr));
       canvas!.height = Math.max(1, Math.round(rect.height * dpr));

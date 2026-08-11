@@ -83,7 +83,7 @@ export default function CanvasTitle({
   let inner!: string;
   switch (wrapperPreset) {
     case 'main':
-      wrapper = `fixed w-full h-[30vh] pointer-events-auto ${skipIntro ? 'z-80' : 'z-92'}`;
+      wrapper = `fixed w-full h-[40vh] pointer-events-auto ${skipIntro ? 'z-80' : 'z-92'}`;
       inner = `w-full h-full`;
       break;
     case 'sub':
@@ -175,15 +175,7 @@ export default function CanvasTitle({
         };
 
         gsap.to(wrapperRef!.current, { y, ease, scrollTrigger: config });
-        if (groupRef.current) {
-          gsap.to(groupRef.current.scale, {
-            x: scale,
-            y: scale,
-            z: scale,
-            ease,
-            scrollTrigger: config,
-          });
-        }}
+        if (groupRef.current) { gsap.to(groupRef.current.scale, { x: scale, y: scale, z: scale, ease, scrollTrigger: config, }); }}
       break;
       default: break;
     }}, { dependencies: [shrinkMoveAnim, sceneProps.phase] }
@@ -191,7 +183,7 @@ export default function CanvasTitle({
   return (
     <div ref={wrapperRef} className={wrapper}>
       <div className={inner}>
-        <Canvas orthographic camera={{ position: [0, 0, 5], zoom: 100 }} gl={{preserveDrawingBuffer: true}}>
+        <Canvas orthographic camera={{ position: [0, 0, 5], zoom: 130 }} dpr={1} gl={{preserveDrawingBuffer: true}}>
           <Suspense fallback={null}>
             <Environment preset='warehouse' environmentIntensity={2} />
             <ambientLight intensity={0.5} />
