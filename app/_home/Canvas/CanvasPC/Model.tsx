@@ -230,23 +230,23 @@ export function PC({
 
   return (
     <group ref={groupRef}>１
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.51, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.6, 0]} receiveShadow>
         <planeGeometry args={[40, 40]} />
-        <shadowMaterial opacity={0.92} />
+        <shadowMaterial opacity={1} />
       </mesh>
 
-      <mesh position={[1.5, -1, -1.5]} rotation={[0, Math.PI / 4, 0]} castShadow receiveShadow>
+      <mesh position={[1.2, -1.6, -1.8]} rotation={[0, Math.PI / 4, 0]} castShadow receiveShadow>
         <boxGeometry args={[5, 1, 3]} />
         <meshPhysicalMaterial
           color='#5c5c5c'
-          roughness={0.82}      // 石やマットな塗装。完全な 1.0 にすると質感が消える
+          roughness={0.82}
           metalness={0}
-          reflectivity={0.35}   // 粗い面ほど正反射は弱い
+          reflectivity={0.35}
           clearcoat={0}
           envMapIntensity={0.6}
         />
       </mesh>
-      <primitive object={scene} position={[0, -0.5, 0]} scale={1} />
+      <primitive object={scene} position={[0, -1.1, 0]} scale={1} />
     </group>
   );
 }

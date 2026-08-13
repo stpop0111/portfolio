@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Color, DoubleSide, MeshStandardMaterial, type Group, type Mesh } from 'three';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import HexToRGB from '@/app/_utils/HexToRGB';
 
 type TextConfig = {
   text: string;
@@ -59,70 +60,61 @@ export function TitleScene({
   /* 初期設定
   --------------------------------------- */
   const { nodes } = useGLTF(modelPath);
+
   const geometry = useMemo(() => {
     const source = (nodes[modelName] as Mesh).geometry;
     const cloned = source.clone();
     cloned.computeVertexNormals();
     return cloned;
   }, [modelName, nodes]);
-  const internalGroupRef = useRef<Group>(null);
-  const finalGroupRef = groupRef ?? internalGroupRef;
-  const text3DRef = useRef<Mesh>(null);
+
   const selfTimeRef = useRef(0);
 
-  // 既存の内部 refs と統合
+  const internalGroupRef = useRef<Group>(null);
+  const finalGroupRef = groupRef ?? internalGroupRef;
+
+  // 2Dテキスト
   const internalTextFrontRef = useRef<Mesh>(null);
   const finalTextFrontRef = textFrontRef ?? internalTextFrontRef;
-
   const internalTextBackRef = useRef<Mesh>(null);
   const finalTextBackRef = textBackRef ?? internalTextBackRef;
 
-  // transmissionBackground は外部に公開
+  // 3Dテキスト
+  const text3DRef = useRef<Mesh>(null);
+  const text3DMaterialRef = useRef<{color:Color}>(null)
   const transmissionBackground = useMemo(() => new Color(bgColor), [bgColor]);
 
   // 外部 ref に Color インスタンスを保存
   useEffect(() => {
-    if (transmissionBgRef) {
-      transmissionBgRef.current = transmissionBackground;
-    }
+    if (transmissionBgRef) { transmissionBgRef.current = transmissionBackground; }
   }, [transmissionBackground, transmissionBgRef]);
 
   /* 表示アニメーション
   --------------------------------------- */
-  useGSAP(
-    () => {
+  useGSAP( () => {
       /* 【フェーズ：タイトル】テキストの表示 */
       if (phase === 'title') {
         const tl = gsap.timeline();
-        if (finalTextFrontRef.current?.material) {
-          tl.to(finalTextFrontRef.current.material, { opacity: 1, duration: 1.4, ease: 'power2.out' });
-        }
-        if (finalTextBackRef.current?.material) {
-          tl.to(finalTextBackRef.current.material, { opacity: 1, duration: 1.4, ease: 'power2.out' }, '<');
-        }
-        if (text3DRef.current) {
-          tl.to( text3DRef.current.scale, { x: modelScale, y: modelScale, z: modelScale, duration: 1.4, ease: 'back.out(2)' }, '<');
-        }
+        if (finalTextFrontRef.current?.material) { tl.to(finalTextFrontRef.current.material, { opacity: 1, duration: 1.4, ease: 'power2.out' }); }
+        if (finalTextBackRef.current?.material) { tl.to(finalTextBackRef.current.material, { opacity: 1, duration: 1.4, ease: 'power2.out' }, '<'); }
+        if (text3DRef.current) { tl.to( text3DRef.current.scale, { x: modelScale, y: modelScale, z: modelScale, duration: 1.4, ease: 'back.out(2)' }, '<'); }
       }
       /* 【フェーズ：ヒーロー表示】テキストの色変更 */
       if (phase === 'hero' && enableHeroColorChange && !skipIntro) {
         const tl = gsap.timeline();
-        if (finalTextFrontRef.current?.material) {
-          tl.to((finalTextFrontRef.current.material as MeshStandardMaterial).color, {
-            r: 0.98,
-            g: 0.98,
-            b: 0.98,
-            duration: 1.2,
-            ease: 'power2.inOut',
-          });
-        }
-        if (finalTextBackRef.current?.material) {
-          tl.to(
-            (finalTextBackRef.current.material as MeshStandardMaterial).color,
-            { r: 0.98, g: 0.98, b: 0.98, duration: 1.2, ease: 'power2.inOut' },
-            '<',
-          );
-        }
+          if (finalTextFrontRef.current?.material) { 
+            const [r, g, b] = HexToRGB('#fafafa');
+            tl.to((finalTextFrontRef.current.material as MeshStandardMaterial).color, { r, g, b, duration: 1.2, ease: 'power2.inOut', }); 
+          }
+          if (finalTextBackRef.current?.material) {
+            const [r, g, b] = HexToRGB('#fafafa');
+            tl.to( (finalTextBackRef.current.material as MeshStandardMaterial).color, { r, g, b, duration: 1.2, ease: 'power2.inOut' }, '<', );
+          }
+          if (text3DMaterialRef.current?.color) {
+            const [r, g, b] = HexToRGB('#fa8112');
+            tl.to(text3DMaterialRef.current?.color, { r, g, b, duration: 0.6, ease: 'power2.inOut' }, '<1.2', );
+            tl.to(transmissionBackground, { r, g, b, duration: 0.6, ease: 'power2.inOut' }, '<', );
+          }
       }
     },
     { dependencies: [phase, skipIntro, enableHeroColorChange] },
@@ -132,15 +124,15 @@ export function TitleScene({
   --------------------------------------- */
   const float = {
     // 浮遊オプション
-    yPhase: 1.2,
-    ySpeed: 0.82,
+    yPhase: 1.5,
+    ySpeed: 1.5,
     yAmp: 0.1,
-    rotYPhase: 2.1,
-    rotYSpeed: 0.68,
-    rotYAmp: 0.12,
+    rotYPhase: 2,
+    rotYSpeed: 1,
+    rotYAmp: 0.1,
     rotZPhase: 3,
-    rotZSpeed: 1.46,
-    rotZAmp: 0.09,
+    rotZSpeed: 1.5,
+    rotZAmp: 0.1,
   };
 
   /* アニメーション */
@@ -177,21 +169,23 @@ export function TitleScene({
         )}
         <mesh ref={text3DRef} geometry={geometry} position={modelPosition} scale={skipIntro ? modelScale : 0}>
           <MeshTransmissionMaterial
-            samples={12}
-            resolution={1024}
+            ref={text3DMaterialRef}
+            samples={8}
+            resolution={512}
             transmission={1}
             roughness={0}
-            metalness={0}
-            thickness={1.8}
+            thickness={1.2}
             ior={1.5}
-            chromaticAberration={0.08}
-            anisotropy={0}
-            distortion={0}
-            distortionScale={0}
+            chromaticAberration={0.35}
+            anisotropicBlur={0.1}
+            distortion={0.1}
+            distortionScale={0.3}
             temporalDistortion={0}
+            backside={true}
+            metalness={0}
+            anisotropy={0}
             background={transmissionBackground}
             side={DoubleSide}
-            backside={true}
             color='#ffffff'
           />
         </mesh>

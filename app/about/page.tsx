@@ -11,18 +11,17 @@ import Curtains from '../_components/Curtains/Curtains';
 // 機能性
 import useResetScrollPosition from '../_utils/useResetScrollPosition';
 import useScrollLocker from '../_utils/useScrollLocker'
-import { curtainPalettes, type ThemeName } from '../_components/Curtains/curtainPalettes';
 // ページ固有（AboutMe）
 import ContactMe from './_components/ContactMe';
 import Scrollhint from './_components/ScrollHint';
 import { Accent } from './_components/ParagraphStyle';
 import { Paragraph } from './_components/ParagraphStyle';
+import { curtainPalettes } from '../_components/Curtains/curtainPalettes';
 
 function PageInner() {
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
-  const theme = searchParams.get('theme') as ThemeName | null;
-  return <About from={from} theme={theme} />;
+  return <About from={from}/>;
 }
 
 export default function Page() {
@@ -33,12 +32,11 @@ export default function Page() {
   );
 }
 
-function About({ from, theme }: { from: string | null; theme: ThemeName | null }) {
+function About({ from }: { from: string | null}) {
   const canvasTitleRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<'curtain' | 'title'>(from === 'home' ? 'curtain' : 'title');
   const [showEntryCurtain, setShowEntryCurtain] = useState(from === 'home');
   const [showCurtain, setShowCurtain] = useState<boolean>(false);
-  const [entryColors] = useState<string[]>( theme && curtainPalettes[theme] ? curtainPalettes[theme] : curtainPalettes.aboutMe, );
   const [scrollLocked, setScrollLocked] = useState<boolean>(true);
   const [showHint, setShowHint] = useState<boolean>(false);
   const router = useRouter();
@@ -61,7 +59,7 @@ function About({ from, theme }: { from: string | null; theme: ThemeName | null }
   return (
     <main>
       {/* カーテン遷移（Homeから） */}
-      <Curtains show={showEntryCurtain} anchor='top' motion='exit' colors={entryColors} onComplete={() => {setShowEntryCurtain(false); setPhase('title')}} /> 
+      <Curtains show={showEntryCurtain} anchor='top' motion='exit' colors={curtainPalettes.zinc} onComplete={() => {setShowEntryCurtain(false); setPhase('title')}} /> 
       {/* カーテン遷移（Homeへ） */}
       <Curtains show={showCurtain} anchor='top' motion='enter' colors={curtainPalettes.zinc} onComplete={() => router.push('/?from=about')} /> 
       {/* 3Dタイトル */}
@@ -77,44 +75,44 @@ function About({ from, theme }: { from: string | null; theme: ThemeName | null }
       {/* パララックステキスト */}
       <section className='aboutContent relative z-20'>
         <div className='introBlock space-y-[20vh]'>
-          <div className=''>
+          <div>
             <Paragraph>こんにちは、<Accent>Seita</Accent>です。</Paragraph>
             <Paragraph>Webの仕事に</Paragraph>
             <Paragraph>小さく挑戦している</Paragraph>
             <Paragraph><Accent>Junior Web Developer</Accent>です。</Paragraph>
           </div>
 
-          <div className=''>
+          <div>
             <Paragraph>電子工業科で<Accent>C</Accent>や<Accent>Python</Accent>に触れ、</Paragraph>
             <Paragraph>国際教養学部で言葉を学び、</Paragraph>
             <Paragraph>今はコードに戻ってきました。</Paragraph>
           </div>
 
-          <div className=''>
+          <div>
             <Paragraph><Accent fontFamily='font-kozuka-mincho'>小さなチームのリード</Accent>として、</Paragraph>
             <Paragraph><Accent fontFamily='font-kozuka-mincho'>ECサイト</Accent>の企画から実装まで、</Paragraph>
             <Paragraph>ひとつの頭で考えています。</Paragraph>
           </div>
 
-          <div className=''>
+          <div>
             <Paragraph>企画もデザインも、</Paragraph>
             <Paragraph>コードも分析も、</Paragraph>
             <Paragraph>すべて<Accent fontFamily='font-kozuka-mincho'>地続き</Accent>の仕事として。</Paragraph>
           </div>
 
-          <div className=''>
+          <div>
             <Paragraph>つくるものは、</Paragraph>
             <Paragraph>次に触る誰かにも、</Paragraph>
             <Paragraph><Accent fontFamily='font-kozuka-mincho'>やさしくありたい</Accent>。</Paragraph>
           </div>
 
-          <div className=''>
+          <div>
             <Paragraph>ひとりでできることを増やすことより、</Paragraph>
             <Paragraph><Accent fontFamily='font-kozuka-mincho'>チーム</Accent>でできることを増やす方が、</Paragraph>
             <Paragraph>わたしは好きです。</Paragraph>
           </div>
 
-          <div className=''>
+          <div>
             <Paragraph>いつも<Accent fontFamily='font-kozuka-mincho'>好奇心</Accent>を持って、</Paragraph>
             <Paragraph>いつも<Accent fontFamily='font-kozuka-mincho'>学び</Accent>ながら、</Paragraph>
             <Paragraph>いつも、<Accent fontFamily='font-kozuka-mincho'>細部</Accent>に。</Paragraph>

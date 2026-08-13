@@ -1,25 +1,21 @@
 // React
 import { useFrame } from '@react-three/fiber';
-import { useRef, useState } from 'react';
+import { useRef, useState,useMemo } from 'react';
 // GSAP
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 // THREE
-import { Html, MeshTransmissionMaterial, useGLTF } from '@react-three/drei';
+import { Html, MeshTransmissionMaterial, useGLTF} from '@react-three/drei';
 import type { Group } from 'three';
 import type { Mesh } from 'three';
+import { Color } from 'three';
 // コンポーネント
 import type { KeyCapType } from './index';
-import type { ThemeName } from '../../../_components/Curtains/curtainPalettes';
+import { KEYCAP_STYLE } from './keyCapsPalettes';
 
-export function KeyCap({
-  keyCap, 
-  onClick,
-  onHover,
-  phase,
-  } : { 
-    keyCap: KeyCapType; 
-    onClick: (path: string, theme: ThemeName) => void;
+export function KeyCap({ keyCap, onClick, onHover, phase, } : { 
+    keyCap: KeyCapType;
+    onClick: (path: string) => void;
     onHover: (label: string | null) => void;
     phase: string;
   }) {
@@ -27,6 +23,11 @@ export function KeyCap({
   const { nodes } = useGLTF('/models/model__keycap.glb');
   const geometry = (nodes.key as Mesh).geometry;
   const selfTimeRef = useRef(0);
+
+  const transmissionBackground = useMemo(() => new Color(KEYCAP_STYLE.color), [])
+  const materialRef = useRef<{ color: Color }>(null);
+  const hoveredColor = useMemo(() => new Color(KEYCAP_STYLE.hoverColor), []);
+  const baseColor = useMemo(() => new Color(KEYCAP_STYLE.color), []);
 
   // ---------------------------
   // クリックアニメーション
@@ -38,7 +39,7 @@ export function KeyCap({
     setClicked(true);
     const tl = gsap.timeline();
     tl.to(groupRef.current!.position, { y: -0.2, duration: 0.15, ease: 'power4.in', })
-      .to(groupRef.current!.position, { y: 0, duration: 0.1, ease: 'power4.out', onComplete: () => onClick(keyCap.path, keyCap.theme), });
+      .to(groupRef.current!.position, { y: 0, duration: 0.1, ease: 'power4.out', onComplete: () => onClick(keyCap.path), });
   };
 
   // ---------------------------
@@ -53,8 +54,7 @@ export function KeyCap({
     rotZ: { speed: [0.1, 0.15], amp: [0.1, 0.2] }, // Z軸周りの回転アニメーション設定
   };
 
-  // マウント時の数値計算 
-  // ランダムな数値（Math.random）を使用して設定した数値の中で動かす
+  // マウント時の数値計算:ランダムな数値（Math.random）を使用して設定した数値の中で動かす
   const [offsets] = useState(() => ({
     // 高さ
     yPhase: Math.random() * Math.PI * 2,
@@ -109,42 +109,45 @@ export function KeyCap({
     groupRef.current.rotation.x += (targetRotX - groupRef.current.rotation.x) * lerpFactor;
     groupRef.current.rotation.y += (targetRotY - groupRef.current.rotation.y) * lerpFactor;
     groupRef.current.rotation.z += (targetRotZ - groupRef.current.rotation.z) * lerpFactor;
+    materialRef.current?.color.lerp(hovered ? hoveredColor :  baseColor, lerpFactor);
   });
 
+  // ---------------------------
   // 登場アニメーション
+  // ---------------------------
   useGSAP(() => {
     if (!groupRef.current) return;
     if (phase === 'hero') {
-    const tl = gsap.timeline({ delay: 1.0 });
-      tl.to(appearOffsetRef.current, {
-        y: 0,
-        duration: 1.2,
-        delay: offsets.appearDelay,
-        ease: 'back.out(1.7)',
-      })
+      const tl = gsap.timeline({ delay: 1.0 });
+      tl.to(appearOffsetRef.current, { y: 0, duration: 1.2, delay: offsets.appearDelay, ease: 'back.out(1.7)', })
     }
   },{ dependencies: [phase] });
 
   return (
 
     // 各キーキャップのメッシュ
-    <group
-      ref={groupRef} position={[keyCap.x, 0, 0]} rotation-x={0.3}
+    <group ref={groupRef} position={[keyCap.x, 0, 0]} rotation-x={0.3}
       onPointerOver={(e) => { setHovered(true); e.stopPropagation(); onHover(keyCap.label); }}
       onPointerOut={() => { setHovered(false); onHover(null) }}
       onClick={(e) => { e.stopPropagation(); handleClick(); onHover(null); }}
     >
       <mesh geometry={geometry}>
         <MeshTransmissionMaterial
-          samples={6}
+          ref={materialRef}
+          background={transmissionBackground}
+          samples={8}
           resolution={512}
-          transmission={0.85}
-          roughness={0.1}
-          thickness={0.6}
-          ior={1.45}
-          chromaticAberration={0.2}
+          transmission={1}
+          roughness={0}
+          thickness={3}
+          ior={1.5}
+          chromaticAberration={0.35}
+          anisotropicBlur={0.1}
+          distortion={0.1}
+          distortionScale={0.3}
+          temporalDistortion={0}
           backside={true}
-          color={keyCap.color}
+          color={KEYCAP_STYLE.color}
         />
       </mesh>
 

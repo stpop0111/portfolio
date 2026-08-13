@@ -2,6 +2,12 @@
 
 ポートフォリオサイトの設計・実装ノート。
 
+## タスク管理
+
+| ファイル | 内容 |
+|---|---|
+| [tasks.md](./tasks.md) | **タスクの正**。進行中・未着手・完了ログをここで管理する |
+
 ## 設計書（ページ単位）
 
 | ファイル | 内容 |
@@ -22,5 +28,5 @@
 
 | ファイル | 内容 |
 |---|---|
-| [portfolio-tasks.md](./portfolio-tasks.md) | 初期のタスク整理 |
+| [portfolio-tasks.md](./portfolio-tasks.md) | 初期のタスク整理（現在は tasks.md が正） |
 | [glass-intro.html](./glass-intro.html) | ガラス表現の試作 |
