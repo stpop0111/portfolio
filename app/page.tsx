@@ -76,7 +76,8 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   // ---------------------------
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false); // リロードボタン出現の管理
   useEffect(() => {
-    const timer = setTimeout(() => { setIsRefreshing(true); }, 5000);
+    // イントロが一通り終わる時間より後に出す。早いとローディング中に被る
+    const timer = setTimeout(() => { setIsRefreshing(true); }, 15000);
     return () => clearTimeout(timer);
   }, []);
 

@@ -92,6 +92,8 @@ body {
   --baseline-drop: 0.135em; /* グリフを沈めてベースラインをマスク下端に合わせる量 */
   --slot-w: 0.61em;         /* 数字1桁の幅。いちばん広い「0」の送り幅 0.6045em に合わせて固定 */
   --bleed: 0.08em;          /* 字面が送り幅からはみ出すぶんの逃げ。下の cell を参照 */
+  --tracking: 0.04em;       /* 字間を詰める量。文字ごとにマスクへ切っている関係で
+                               letter-spacing が効かないため、cell のマージンで詰める */
 }
 
 .loadingTitle__line {
@@ -107,14 +109,16 @@ body {
    overflow は上下だけ効かせたいが、片方だけ visible にはできない
    （CSSの仕様上 auto に化ける）ので、左右にパディングを足して
    クリップ範囲を横に広げ、同じ量のネガティブマージンで見た目の幅を戻している。
-   これで f のように字面が送り幅からはみ出す文字も切れない */
+   これで f のように字面が送り幅からはみ出す文字も切れない。
+   マージンにはさらに --tracking の半分を足して、隣り合う文字の間隔を詰めている
+   （左右で半分ずつ負担するので、文字間で詰まる量はちょうど --tracking になる） */
 .loadingTitle__cell {
   display: flex;
   align-items: flex-end;
   height: var(--mask-h);
   overflow: hidden;
   padding-inline: var(--bleed);
-  margin-inline: calc(var(--bleed) * -1);
+  margin-inline: calc((var(--bleed) + var(--tracking) / 2) * -1);
 }
 
 /* マスクの中で実際に字面を持つ要素。ベースラインをマスク下端に揃える */
