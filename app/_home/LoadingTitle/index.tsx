@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { DigitReel } from './DigitReel';
+import { EASE } from '../../_utils/eases';
 
 type Phase = 'loading' | 'changing' | 'title' | 'hero';
 
@@ -14,11 +15,21 @@ const DIGIT_LENGTH = 3;
 const PRE_TEXT = 'P';
 const POST_TEXT = 'rtfolio';
 
+/*
+  秒数は M3 の duration トークンに寄せている。
+  大きく動くもの・見せ場になるものは extra-long（0.7〜1.0秒）の領域を使う。
+  stagger は必ず duration より短くして、要素同士の動きを重ねる
+  （前の要素が止まってから次が動く並びは機械的に見えるため）。
+*/
 const TICK = 0.5; // 進捗を検知する間隔（PDF指定）。数字が回っている間は進まない
 const MIN_DURATION = 1.5; // 検知時間の合計がこれを下回らないようにする。TICK×3回分は必ず見せる
-const HOLD = 0.7; // 100%到達後のキープ（PDF指定）
-const DIGIT = { duration: 0.8, ease: 'power2.out', stagger: 0.05 }; // 桁のロール。100の位→1の位
-const EXIT = { duration: 0.6, ease: 'power2.in', stagger: 0.04 }; // 退場。右→左
+const HOLD = 0.9; // 100%到達後のキープ。PDF指定は0.7だが、落とす前の「ため」として少し伸ばした
+const AFTER_EXIT = 0.35; // 文字が消えてからタイトルを出すまでの間
+
+// 桁のロールは動き自体を見せたいので move。減速の強い decelerate / standard だと
+// 前半で一気に流れてしまい、秒数を伸ばしても体感が変わらない
+const DIGIT = { duration: 0.9, ease: EASE.move, stagger: 0.08 }; // 100の位→1の位
+const EXIT = { duration: 0.9, ease: EASE.accelerate, stagger: 0.07 }; // 退場。右→左
 
 // 最後の桁まで回り終わるのにかかる時間。この間は検知を止める
 const ROLL_TIME = DIGIT.duration + DIGIT.stagger * (DIGIT_LENGTH - 1);
@@ -95,7 +106,8 @@ export function LoadingTitle({ phase, progress, onCountComplete, onExitComplete 
         duration: EXIT.duration,
         ease: EXIT.ease,
         stagger: { each: EXIT.stagger, from: 'end' },
-        onComplete: onExitComplete,
+        // 消えきってすぐタイトルを出すと詰まって見えるので、一拍おいてから次へ渡す
+        onComplete: () => gsap.delayedCall(AFTER_EXIT, onExitComplete),
       });
     },
     { scope: rootRef, dependencies: [phase] },

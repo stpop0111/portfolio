@@ -23,6 +23,7 @@ import { GridBackground } from './_components/GridBackground';
 import { FluidTitleWarp } from './_components/FluidEffect/FluidTitleWarp';
 import { keyCapsPalettes } from './_home/Canvas/CanvasKey/keyCapsPalettes';
 import { curtainPalettes } from './_components/Curtains/curtainPalettes';
+import { EASE } from './_utils/eases';
 
 // プリロード
 useGLTF.preload('/models/model__keycap.glb');
@@ -94,9 +95,10 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
 
   // アニメーション；タイトル表示からヒーローコンテンツ表示
   // ---------------------------
+  // タイトルが出きったあと、読ませる間をとってからヒーローへ
   useEffect(() => {
     if (phase === 'title') {
-      const timer = setTimeout(() => setPhase('hero'), 2000);
+      const timer = setTimeout(() => setPhase('hero'), 2600);
       return () => clearTimeout(timer);
     }
   }, [phase]);
@@ -105,10 +107,11 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
     () => {
       if (phase === 'hero') {
         if (!canvasPCRef.current || !canvasNavKeyRef.current || !canvasTitleRef.current) return;
-        const tl = gsap.timeline({ delay: 0.7 });
-        tl.from(canvasPCRef.current!.position, { y: -1, duration: 1.2, ease: 'power4.inOut' }, '<')
-          .to(canvasTitleRef.current, { y: '-75%', duration: 1.2, ease: 'power2.inOut' }, '<')
-          .fromTo('.gradientOverlay', { opacity: 0 }, { opacity: 1, duration: 1, ease: 'power2.inOut' }, '<');
+        // 3つを完全に同時に動かすと一発の切り替えに見えるので、少しずつずらして重ねる
+        const tl = gsap.timeline({ delay: 0.9 });
+        tl.from(canvasPCRef.current!.position, { y: -1, duration: 1.6, ease: EASE.decelerate }, '<')
+          .to(canvasTitleRef.current, { y: '-75%', duration: 1.6, ease: EASE.standard }, '<0.15')
+          .fromTo('.gradientOverlay', { opacity: 0 }, { opacity: 1, duration: 1.4, ease: EASE.standard }, '<0.15');
       }
     },
     { dependencies: [phase, skipIntro, modelReady] },
