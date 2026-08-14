@@ -10,15 +10,18 @@ type Phase = 'loading' | 'changing' | 'title' | 'hero';
 /* -------------------------------------------------
   タイミング（PDFに指定のない値は提案値。ここだけ見れば調整できる）
 ------------------------------------------------- */
-const TICK = 0.5; // 進捗を検知する間隔（PDF指定）
-const MIN_DURATION = 1.5; // カウントアップの最低表示時間。TICK×3回分は必ず見せる
-const HOLD = 0.7; // 100%到達後のキープ（PDF指定）
-const DIGIT = { duration: 0.4, ease: 'power2.out', stagger: 0.05 }; // 桁のスライド。100の位→1の位
-const EXIT = { duration: 0.6, ease: 'power2.in', stagger: 0.04 }; // 退場。右→左
-
 const DIGIT_LENGTH = 3;
 const PRE_TEXT = 'P';
 const POST_TEXT = 'rtfolio';
+
+const TICK = 0.5; // 進捗を検知する間隔（PDF指定）。数字が回っている間は進まない
+const MIN_DURATION = 1.5; // 検知時間の合計がこれを下回らないようにする。TICK×3回分は必ず見せる
+const HOLD = 0.7; // 100%到達後のキープ（PDF指定）
+const DIGIT = { duration: 0.8, ease: 'power2.out', stagger: 0.05 }; // 桁のロール。100の位→1の位
+const EXIT = { duration: 0.6, ease: 'power2.in', stagger: 0.04 }; // 退場。右→左
+
+// 最後の桁まで回り終わるのにかかる時間。この間は検知を止める
+const ROLL_TIME = DIGIT.duration + DIGIT.stagger * (DIGIT_LENGTH - 1);
 
 type LoadingTitleProps = {
   phase: Phase;
@@ -33,42 +36,52 @@ type LoadingTitleProps = {
  */
 export function LoadingTitle({ phase, progress, onCountComplete, onExitComplete }: LoadingTitleProps) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const startedAt = useRef(0);
 
-  // interval を張り直さずに最新の進捗を読むための箱
+  // タイマーを張り直さずに最新の進捗を読むための箱
   const progressRef = useRef(progress);
   useEffect(() => {
     progressRef.current = progress;
   }, [progress]);
 
-  // 表示中の値と、その直前の値。リールが「上に用意する数字」を決めるのに両方いる
+  // 表示中の値と、その直前の値。リールが「途中に積む数字」を決めるのに両方いる
   const [count, setCount] = useState({ value: 0, prev: 0 });
 
-  /* 0.5秒に一回ローディングを検知し、その数値を各要素で準備する
+  /* 0.5秒ローディングを検知 → その数値まで回す → 回り終わったらまた0.5秒検知…
+     を繰り返す。数字が回っている間は検知を止めるので、ロールが途中で切られない
   --------------------------------------- */
   useEffect(() => {
     if (phase !== 'loading') return;
-    startedAt.current = performance.now();
 
-    const id = window.setInterval(() => {
-      const elapsed = (performance.now() - startedAt.current) / 1000;
-      // 実ロードが速く終わってもカウントアップを見せたいので、経過時間で上限をかける。
-      // MIN_DURATION 秒かけて 0→100 に開く天井と、実際の進捗の低い方を採用する
-      const ceiling = (elapsed / MIN_DURATION) * 100;
+    let timer = 0;
+    let detected = 0; // 検知に使った時間の合計。回っている間は増えない
+    let shown = 0; // いま表示している値
+
+    const sample = () => {
+      detected += TICK;
+      // 実ロードが速く終わってもカウントアップを見せたいので、検知時間で上限をかける。
+      // MIN_DURATION 秒ぶん検知して 0→100 に開く天井と、実際の進捗の低い方を採用する
+      const ceiling = (detected / MIN_DURATION) * 100;
       const next = Math.floor(Math.min(progressRef.current, ceiling, 100));
       // 進捗が巻き戻ることがあるので、表示は減らさない
-      setCount((current) => (next <= current.value ? current : { value: next, prev: current.value }));
-    }, TICK * 1000);
+      const rolls = next > shown;
+      if (rolls) {
+        setCount({ value: next, prev: shown });
+        shown = next;
+      }
+      if (next >= 100) return; // 100 まで来たらここで打ち止め
+      // 回したぶんだけ待ってから次の検知へ
+      timer = window.setTimeout(sample, (rolls ? ROLL_TIME + TICK : TICK) * 1000);
+    };
 
-    return () => window.clearInterval(id);
+    timer = window.setTimeout(sample, TICK * 1000);
+    return () => window.clearTimeout(timer);
   }, [phase]);
 
-  /* 100%到達 → 最後の桁が着地してから0.7秒キープ → 退場へ
+  /* 100%到達 → 最後の桁が止まってから0.7秒キープ → 退場へ
   --------------------------------------- */
   useEffect(() => {
     if (phase !== 'loading' || count.value < 100) return;
-    const settle = DIGIT.duration + DIGIT.stagger * (DIGIT_LENGTH - 1);
-    const id = window.setTimeout(onCountComplete, (settle + HOLD) * 1000);
+    const id = window.setTimeout(onCountComplete, (ROLL_TIME + HOLD) * 1000);
     return () => window.clearTimeout(id);
   }, [phase, count.value, onCountComplete]);
 
