@@ -123,12 +123,18 @@ body {
   color: #111;
 }
 
-/* 数字1桁のリール。上下2マスの列を持ち、下（＝直前の値）を見せた状態で待機する */
+/* 数字1桁のリール。直前の値〜新しい値までを積んだ列を持ち、下端を見せた状態で待機する */
 .loadingTitle__slot {
   display: block;
   width: var(--slot-w);
   height: var(--mask-h);
   overflow: hidden;
+}
+
+/* 実際に transform で回る列。インラインのままだと transform が効かないので block にする */
+.loadingTitle__slotInner {
+  display: block;
+  will-change: transform;
 }
 
 .loadingTitle__digit {
