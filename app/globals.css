@@ -6,12 +6,13 @@
 }
 
 /* ローディング画面で使う自前フォント。
-   Typekit の読み込みを待たずに描画したいのでセルフホストのものを使う */
+   Google Fonts の Urbanist（wght 100〜900 の可変フォント）を woff2 で取得して置いてある。
+   ローディング画面は最速で出したいので、CDN からではなく自分のドメインから配る */
 @font-face {
   font-family: "Urbanist";
-  src: url("/fonts/Urbanist-MediumItalic.ttf") format("truetype");
-  font-weight: 500;
-  font-style: italic;
+  src: url("/fonts/Urbanist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
   font-display: block;
 }
 
@@ -80,32 +81,40 @@ body {
 /* -------------------------------------------------
   ローディング画面（P[000]rtfolio）
 
-  数値はすべて Urbanist Medium Italic のメトリクス（unitsPerEm 2000）から算出。
+  数値はすべて Urbanist Bold (wght 700) のメトリクス（unitsPerEm 2000）から算出。
   - アセンダ上端（f）… 0.762em ／ キャップハイト（P）… 0.700em
-  - o のオーバーシュート … ベースラインの 0.013em 下
+  - o と一部の数字のオーバーシュート … ベースラインの 0.013em 下
   - line-height:1 のときベースラインは行ボックス下端から 0.15em の位置
   マスクの下端をベースラインに合わせたいので、グリフを 0.135em 分だけ沈める。
 ------------------------------------------------- */
 .loadingTitle {
   --mask-h: 0.79em;         /* マスク＝白矩形の高さ。アセンダ上端〜ベースライン */
   --baseline-drop: 0.135em; /* グリフを沈めてベースラインをマスク下端に合わせる量 */
-  --slot-w: 0.6em;          /* 数字1桁の幅。いちばん広い「0」の送り幅 0.598em に合わせて固定 */
+  --slot-w: 0.61em;         /* 数字1桁の幅。いちばん広い「0」の送り幅 0.6045em に合わせて固定 */
+  --bleed: 0.08em;          /* 字面が送り幅からはみ出すぶんの逃げ。下の cell を参照 */
 }
 
 .loadingTitle__line {
   display: flex;
   align-items: flex-end;
   line-height: 1;
+  font-weight: 700;
   font-size: clamp(2rem, 17.5vw, 18rem);
   color: #fafafa;
 }
 
-/* 1文字分のマスク。退場時はこの下端の裏に文字が潜り込んで消える */
+/* 1文字分のマスク。退場時はこの下端の裏に文字が潜り込んで消える。
+   overflow は上下だけ効かせたいが、片方だけ visible にはできない
+   （CSSの仕様上 auto に化ける）ので、左右にパディングを足して
+   クリップ範囲を横に広げ、同じ量のネガティブマージンで見た目の幅を戻している。
+   これで f のように字面が送り幅からはみ出す文字も切れない */
 .loadingTitle__cell {
   display: flex;
   align-items: flex-end;
   height: var(--mask-h);
   overflow: hidden;
+  padding-inline: var(--bleed);
+  margin-inline: calc(var(--bleed) * -1);
 }
 
 /* マスクの中で実際に字面を持つ要素。ベースラインをマスク下端に揃える */
