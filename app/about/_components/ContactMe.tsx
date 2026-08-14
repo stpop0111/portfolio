@@ -133,7 +133,7 @@ export default function ContactMe({ onScrollComplete }: {onScrollComplete: () =>
                 <SplitText text='あなたのお仕事にご協力させてください' className='contactText' />
               </h2>
             </div>
-            <p className='font-seasons overflow-hidden text-base text-zinc-900 mt-3 group-hover:underline'>
+            <p className='font-corporate-a overflow-hidden text-base text-zinc-900 mt-3 group-hover:underline'>
               <SplitText text='(send me mail)' className='contactText' />
             </p>
           </div>

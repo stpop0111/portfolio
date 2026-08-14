@@ -8,7 +8,52 @@
 
 ---
 
-## 🏗️ 進行中：Works ページ
+## 🎬 ローディング演出の実装
+
+設計書: [loading-intro.md](./loading-intro.md)（Claude Code で作成した実装案。付録Aに全ソース）
+
+### - [ ] 【Loading】本体の実装
+
+`P[000]rtfolio` の数字がロールしながらカウントアップする演出。以下は**まだ未作成**。
+
+- `app/_home/LoadingTitle/index.tsx` — 進捗の検知とサイクル制御
+- `app/_home/LoadingTitle/DigitReel.tsx` — 数字のロール
+- `app/_home/GlassWordmark/wordmarkPaths.ts` / `useGlassWordmark.ts` — seita のガラス文字
+- `public/fonts/Urbanist-Variable.woff2` — 可変フォントのセルフホスト
+- `globals.css` の文字組み（クリップ、字間）
+- `page.tsx` / `HeroText.tsx` / `FluidTitleWarp.tsx` / `CanvasTitle/Model.tsx` の変更
+
+> 付録Aに全ソースがあるので、写経ベースで移植 → 動作を見ながら調整、という進め方になる。
+
+### - [ ] 【Loading】🟡 3Dタイトルの書体をローディングと揃える
+
+ローディングのタイトルは直立 Bold にしたが、`CanvasTitle` の「Port / olio」は `Urbanist-MediumItalic.ttf` のまま。**同じ「Portfolio」なのに前後で書体が変わる。**
+
+可変フォントから wght 700 の静的 TTF を書き出して差し替える。字幅が変わるため `preText` / `postText` の `position` と、間に入る3Dレターとの間隔を調整し直す必要がある。
+
+> 「タイトルを大きく出して hero で縮小」と同じ CanvasTitle を触るので、まとめてやると効率的。
+
+### - [ ] 【Loading】🟡 SP（スマホ）表示の調整
+
+`font-size: clamp(2rem, 17.5vw, 18rem)` で縮むだけなので、スマホだと `P[000]rtfolio` がかなり細くなる。ガラスの seita も `43vw` 固定なので要確認。実機を見てから調整。
+
+> 「モバイル実機で FPS チェック」と同じタイミングでやると効率的。
+
+### - [ ] 【Loading】🟢 HeroText の扱い / ESLint / ジャギー検証
+
+小粒な残タスク。
+
+- **HeroText が空の器** — `Loading...` を削除して中身が空に。設計書 Stage 4 の名前タイポ（seita / izaki）を入れる場所として残してある。使わないなら削除
+- **既存の ESLint エラー** — `FluidEffect/FluidCanvas.tsx` の `react-hooks/refs` 3件、`layout.tsx` の未使用 import 1件
+- **ジャギーの再検証** — 原因になりうる2点（`will-change` の常時指定、クリップ線とオーバーシュートの接触）は修正済みだが、検証環境で再現できなかったため実機確認が必要
+
+### - [ ] 【ドキュメント】home-animation.md を現状に合わせて更新
+
+Stage 1・2 の記述（`Loading...` の点滅、ブラー遷移）が現状と一致しない。loading-intro.md の内容を反映するか、設計書側から参照を張る（重複を避けるなら後者）。
+
+---
+
+## 🏗️ 次に着手：Works ページ
 
 ### - [ ] 【Works】① 静的な土台（3Dタイトル + カーテン）
 
@@ -65,7 +110,7 @@ Works の構造が固まってから着手。
 
 ### - [ ] 【Home演出】キーキャップ ラベルの1文字スクロール
 
-[herofluidlesson.md](./herofluidlesson.md) 第7章。
+[fluid-simulation-guide.md](./fluid-simulation-guide.md) 第7章。
 
 現状は `{hovered && <Html>}` で出し入れするだけ。チュートリアル版は：
 
@@ -238,7 +283,7 @@ metadata API、OG 画像生成。
 
 ## 品質
 
-- [x] **3Dレンダリングの質感改善**（→ [3d-rendering-guide.md](./3d-rendering-guide.md)）
+- [x] **3Dレンダリングの質感改善**（→ [3d-rendering.md](./3d-rendering.md)）
   - Lightformer / PBR値 / キアロスクーロ / ACESFilmic トーンマッピング / N8AO / ContactShadows
 - [x] **WebGL パフォーマンス第一段階**（DPR=1 で描画ピクセル 1/4）
 - [x] **Vercel ビルドエラー2件の解決**

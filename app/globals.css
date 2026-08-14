@@ -8,7 +8,6 @@
 @theme inline {
   --font-kozuka-gothic: "kozuka-gothic-pro", sans-serif;
   --font-kozuka-mincho: "kozuka-mincho-pro", serif;
-  --font-seasons: "the-seasons", sans-serif;
   --font-futura: "futura-100", sans-serif;
   --font-corporate-a: "corporate-a", serif;
   --font-dotgothic16: dotgothic16, sans-serif;
@@ -62,6 +61,9 @@ body {
   transition: opacity 0s ease;
 }
 
-.wf-loading body {
+.wf-loading body .font-futura,
+.wf-loading body .font-kozuka-gothic,
+.wf-loading body .font-kozuka-mincho, 
+.wf-loading body .font-corporate-a {
   opacity: 0;
 }
