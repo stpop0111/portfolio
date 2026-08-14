@@ -5,6 +5,16 @@
   --foreground: #171717;
 }
 
+/* ローディング画面で使う自前フォント。
+   Typekit の読み込みを待たずに描画したいのでセルフホストのものを使う */
+@font-face {
+  font-family: "Urbanist";
+  src: url("/fonts/Urbanist-MediumItalic.ttf") format("truetype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: block;
+}
+
 @theme inline {
   --font-kozuka-gothic: "kozuka-gothic-pro", sans-serif;
   --font-kozuka-mincho: "kozuka-mincho-pro", serif;
@@ -12,6 +22,7 @@
   --font-futura: "futura-100", sans-serif;
   --font-corporate-a: "corporate-a", serif;
   --font-dotgothic16: dotgothic16, sans-serif;
+  --font-urbanist: "Urbanist", sans-serif;
 }
 
 @theme {
@@ -64,4 +75,65 @@ body {
 
 .wf-loading body {
   opacity: 0;
+}
+
+/* -------------------------------------------------
+  ローディング画面（P[000]rtfolio）
+
+  数値はすべて Urbanist Medium Italic のメトリクス（unitsPerEm 2000）から算出。
+  - アセンダ上端（f）… 0.762em ／ キャップハイト（P）… 0.700em
+  - o のオーバーシュート … ベースラインの 0.013em 下
+  - line-height:1 のときベースラインは行ボックス下端から 0.15em の位置
+  マスクの下端をベースラインに合わせたいので、グリフを 0.135em 分だけ沈める。
+------------------------------------------------- */
+.loadingTitle {
+  --mask-h: 0.79em;         /* マスク＝白矩形の高さ。アセンダ上端〜ベースライン */
+  --baseline-drop: 0.135em; /* グリフを沈めてベースラインをマスク下端に合わせる量 */
+  --slot-w: 0.6em;          /* 数字1桁の幅。いちばん広い「0」の送り幅 0.598em に合わせて固定 */
+}
+
+.loadingTitle__line {
+  display: flex;
+  align-items: flex-end;
+  line-height: 1;
+  font-size: clamp(2rem, 17.5vw, 18rem);
+  color: #fafafa;
+}
+
+/* 1文字分のマスク。退場時はこの下端の裏に文字が潜り込んで消える */
+.loadingTitle__cell {
+  display: flex;
+  align-items: flex-end;
+  height: var(--mask-h);
+  overflow: hidden;
+}
+
+/* マスクの中で実際に字面を持つ要素。ベースラインをマスク下端に揃える */
+.loadingTitle__ink {
+  display: block;
+  margin-bottom: calc(var(--baseline-drop) * -1);
+}
+
+/* カウンタの白矩形。中で桁ごとにベースラインを取るので自身は下端揃えのまま */
+.loadingTitle__reel {
+  display: flex;
+  align-items: flex-end;
+  height: var(--mask-h);
+  background-color: #fafafa;
+  color: #111;
+}
+
+/* 数字1桁のリール。上下2マスの列を持ち、下（＝直前の値）を見せた状態で待機する */
+.loadingTitle__slot {
+  display: block;
+  width: var(--slot-w);
+  height: var(--mask-h);
+  overflow: hidden;
+}
+
+.loadingTitle__digit {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: var(--mask-h);
 }

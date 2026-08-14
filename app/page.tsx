@@ -16,6 +16,7 @@ import Curtains from './_components/Curtains/Curtains';
 import CanvasTitle from './_components/CanvasTitle';
 import { ReloadButton } from './_home/ReloadButton';
 import { HeroText } from './_home/HeroText';
+import { LoadingTitle } from './_home/LoadingTitle';
 import { CanvasPC } from './_home/Canvas/CanvasPC';
 import { CanvasNavKey } from './_home/Canvas/CanvasKey';
 import { GridBackground } from './_components/GridBackground';
@@ -64,13 +65,11 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   // ---------------------------
   // プリロード
   // ---------------------------
+  // total が 0 の間は進捗が当てにならないので 0 として扱う
   const { progress, total } = useProgress();
-  useEffect(() => {
-    if (!skipIntro && phase === 'loading' && progress === 100 && total > 0) {
-      const timer = setTimeout(() => { setPhase('changing'); }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [progress, total, phase, skipIntro]);
+  const loadProgress = total > 0 ? progress : 0;
+  const handleCountComplete = useCallback(() => setPhase('changing'), []);
+  const handleExitComplete = useCallback(() => setPhase('title'), []);
 
   // ---------------------------
   // リロードボタンの表示
@@ -85,26 +84,6 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   // テキストのアニメーション
   // ---------------------------
   const heroTextRef = useRef<HTMLDivElement>(null);
-
-  useGSAP(
-    () => {
-      /* アニメーション : ローディング */
-      if (phase === 'loading') {
-        const tl = gsap.timeline({ repeat: -1 });
-        gsap.utils.toArray<Element>('.loading').forEach((char) => {
-          tl.to(char, { y: -2, duration: 0.1, ease: 'power2.out' }, '-=0.2')
-            .to(char, { y: 0, duration: 0.15, ease: 'power2.in', });
-        });
-      }
-      /* アニメーション : タイトルの表示切り替え */
-      if (phase === 'changing') {
-        const tl = gsap.timeline({ onComplete: () => setPhase('title') });
-        tl.to('.loading', { opacity: 0, filter: 'blur(20px)', duration: 0.8, stagger: { amount: 0.5, from: 'center' }, ease: 'power2.in', })
-          .to('.progressText', { y: '100%', duration: 0.8, ease: 'bounce.out' }, '<');
-      }
-    },
-    { dependencies: [phase] },
-  );
 
   // ---------------------------
   // タイトル画面の表示
@@ -173,8 +152,18 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
         style={{ background: 'linear-gradient(0deg, rgba(13,13,13,1) 0%, rgba(13,13,13,0) 45%)', zIndex: 30 }}
       />
 
+      {/* ローディング画面 */}
+      {!skipIntro && (
+        <LoadingTitle
+          phase={phase}
+          progress={loadProgress}
+          onCountComplete={handleCountComplete}
+          onExitComplete={handleExitComplete}
+        />
+      )}
+
       {/* タイトルテキスト */}
-      <HeroText ref={heroTextRef} phase={phase} progressCount={Math.floor(progress)} hideLoading={skipIntro} />
+      <HeroText ref={heroTextRef} />
       <CanvasTitle
         ref={canvasTitleRef}
         phase={phase}
@@ -193,9 +182,9 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
         sourceRef={canvasTitleRef}
         className={`fixed inset-0 h-full w-full pointer-events-none ${skipIntro ? 'z-80' : 'z-92'}`}
       />
-      {/* ページリロードボタン */}
+      {/* ページリロードボタン（ローディング画面の z-95 より前に出す） */}
       {isRefreshing && phase === 'loading' && (
-        <div className='fixed z-50 bottom-8 left-1/2 -translate-x-1/2'>
+        <div className='fixed z-96 bottom-8 left-1/2 -translate-x-1/2'>
           <ReloadButton />
         </div>
       )}
