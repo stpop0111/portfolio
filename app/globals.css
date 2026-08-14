@@ -89,7 +89,10 @@ body {
 ------------------------------------------------- */
 .loadingTitle {
   --mask-h: 0.79em;         /* マスク＝白矩形の高さ。アセンダ上端〜ベースライン */
-  --baseline-drop: 0.135em; /* グリフを沈めてベースラインをマスク下端に合わせる量 */
+  /* グリフを沈めてベースラインをマスク下端に寄せる量。
+     overflow のクリップ位置はピクセルに丸められるので、o や 0 のオーバーシュート
+     （ベースラインの 0.013em 下）がクリップ線に接しないよう少し余裕を残している */
+  --baseline-drop: 0.125em;
   --slot-w: 0.61em;         /* 数字1桁の幅。いちばん広い「0」の送り幅 0.6045em に合わせて固定 */
   --bleed: 0.08em;          /* 字面が送り幅からはみ出すぶんの逃げ。下の cell を参照 */
   --tracking: 0.04em;       /* 字間を詰める量。文字ごとにマスクへ切っている関係で
@@ -144,10 +147,12 @@ body {
   overflow: hidden;
 }
 
-/* 実際に transform で回る列。インラインのままだと transform が効かないので block にする */
+/* 実際に transform で回る列。インラインのままだと transform が効かないので block にする。
+   will-change: transform は付けない。常時付けると合成レイヤーに固定され、
+   数字がレイヤー側の解像度でラスタライズされて輪郭が荒れることがある
+   （回っている間の昇格は GSAP が面倒を見てくれる） */
 .loadingTitle__slotInner {
   display: block;
-  will-change: transform;
 }
 
 .loadingTitle__digit {
