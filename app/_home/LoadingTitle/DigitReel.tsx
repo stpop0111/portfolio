@@ -8,7 +8,7 @@ type DigitReelProps = {
   prevChar: string; // 直前に表示していた数字
   delay: number; // 100の位から順にずらすための遅延
   duration: number;
-  ease: gsap.EaseFunction | string;
+  ease: string;
 };
 
 /**

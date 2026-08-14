@@ -7,7 +7,6 @@ import { Color, DoubleSide, MeshStandardMaterial, type Group, type Mesh } from '
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import HexToRGB from '@/app/_utils/HexToRGB';
-import { EASE } from '@/app/_utils/eases';
 
 type TextConfig = {
   text: string;
@@ -97,8 +96,8 @@ export function TitleScene({
       if (phase === 'title') {
         // 文字のフェードと3Dの立ち上がりを少しずらして重ね、一枚で出てくる感じを避ける
         const tl = gsap.timeline();
-        if (finalTextFrontRef.current?.material) { tl.to(finalTextFrontRef.current.material, { opacity: 1, duration: 1.8, ease: EASE.decelerate }); }
-        if (finalTextBackRef.current?.material) { tl.to(finalTextBackRef.current.material, { opacity: 1, duration: 1.8, ease: EASE.decelerate }, '<'); }
+        if (finalTextFrontRef.current?.material) { tl.to(finalTextFrontRef.current.material, { opacity: 1, duration: 1.8, ease: 'power2.out' }); }
+        if (finalTextBackRef.current?.material) { tl.to(finalTextBackRef.current.material, { opacity: 1, duration: 1.8, ease: 'power2.out' }, '<'); }
         if (text3DRef.current) { tl.to( text3DRef.current.scale, { x: modelScale, y: modelScale, z: modelScale, duration: 1.8, ease: 'back.out(1.4)' }, '<0.2'); }
       }
       /* 【フェーズ：ヒーロー表示】テキストの色変更 */

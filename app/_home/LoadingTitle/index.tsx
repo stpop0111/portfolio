@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { DigitReel } from './DigitReel';
-import { EASE } from '../../_utils/eases';
 
 type Phase = 'loading' | 'changing' | 'title' | 'hero';
 
@@ -16,20 +15,27 @@ const PRE_TEXT = 'P';
 const POST_TEXT = 'rtfolio';
 
 /*
-  秒数は M3 の duration トークンに寄せている。
+  秒数は Material の motion ガイドラインに寄せている。
   大きく動くもの・見せ場になるものは extra-long（0.7〜1.0秒）の領域を使う。
   stagger は必ず duration より短くして、要素同士の動きを重ねる
   （前の要素が止まってから次が動く並びは機械的に見えるため）。
+
+  イージングは GSAP の組み込みを使う。Material の easing トークンに当てはめると
+  だいたい次の対応になる（数値で近似を取った結果）。
+    出てくるもの・止まるもの        … power2.out（強めに効かせたいときは expo.out）
+    去っていくもの                  … power2.in
+    位置を移すもの・動きを見せるもの … power1.inOut
+  減速だけの out 系は前半に動きが偏るので、秒数を伸ばしても体感が変わらない。
+  「ゆっくり見せたい」ものには inOut を当てる。
 */
 const TICK = 0.5; // 進捗を検知する間隔（PDF指定）。数字が回っている間は進まない
 const MIN_DURATION = 1.5; // 検知時間の合計がこれを下回らないようにする。TICK×3回分は必ず見せる
 const HOLD = 0.9; // 100%到達後のキープ。PDF指定は0.7だが、落とす前の「ため」として少し伸ばした
 const AFTER_EXIT = 0.35; // 文字が消えてからタイトルを出すまでの間
 
-// 桁のロールは動き自体を見せたいので move。減速の強い decelerate / standard だと
-// 前半で一気に流れてしまい、秒数を伸ばしても体感が変わらない
-const DIGIT = { duration: 0.9, ease: EASE.move, stagger: 0.08 }; // 100の位→1の位
-const EXIT = { duration: 0.9, ease: EASE.accelerate, stagger: 0.07 }; // 退場。右→左
+// ロールは数字が流れるところを見せたいので inOut。out 系だと一瞬で流れてしまう
+const DIGIT = { duration: 0.9, ease: 'power1.inOut', stagger: 0.08 }; // 100の位→1の位
+const EXIT = { duration: 0.9, ease: 'power2.in', stagger: 0.07 }; // 退場。右→左
 
 // 最後の桁まで回り終わるのにかかる時間。この間は検知を止める
 const ROLL_TIME = DIGIT.duration + DIGIT.stagger * (DIGIT_LENGTH - 1);
@@ -118,10 +124,11 @@ export function LoadingTitle({ phase, progress, onCountComplete, onExitComplete 
   const digits = String(count.value).padStart(DIGIT_LENGTH, '0');
   const prevDigits = String(count.prev).padStart(DIGIT_LENGTH, '0');
 
+  // 背景はカーテンの最前面（bg-zinc-950）と同じ色にして、退場後に地色が変わらないようにする
   return (
     <div
       ref={rootRef}
-      className='loadingTitle font-urbanist fixed inset-0 z-95 flex items-center justify-center bg-[#0d0d0d]'
+      className='loadingTitle font-urbanist fixed inset-0 z-95 flex items-center justify-center bg-zinc-950'
     >
       <h1 className='loadingTitle__line'>
         {PRE_TEXT.split('').map((char, i) => (
