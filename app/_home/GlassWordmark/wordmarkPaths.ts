@@ -1,9 +1,5 @@
 /**
  * 「seita」のロゴ（Illustrator から書き出した SVG のパスデータ）。
- *
- * ガラスの「面」と「ふち」で同じ形が必要なので、ここを唯一の出処にしている。
- * 面 … このパスから作ったマスクを backdrop-filter 付きの要素に当てる
- * ふち … 同じパスを stroke だけで描いて重ねる
  * 差し替えるときは viewBox とパスの d をまとめて入れ替える。
  */
 export const WORDMARK_VIEWBOX = { width: 814, height: 206 } as const;
@@ -17,12 +13,21 @@ export const WORDMARK_PATHS = [
 ] as const;
 
 /**
- * 上のパスから作った、面をくり抜くためのマスク画像。
- * backdrop-filter は CSS ボックスにしか掛けられないので、
- * SVG そのものではなく div をこの形にマスクして使う。
+ * ガラスの見た目を焼き込んだ画像。
+ *
+ * タイトルと同じ波で歪ませるには、DOM ではなく流体の元絵（2Dキャンバス）へ
+ * 描き込む必要がある。キャンバスには backdrop-filter を掛けられないので、
+ * 背面をぼかす代わりに「白い薄膜」と「ふちの光」を絵として持たせている。
+ * 背景がほぼ真っ黒なぶん、ぼかしの有無より膜の濃さのほうが見た目を決める。
  */
-export const WORDMARK_MASK = `url("data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WORDMARK_VIEWBOX.width} ${WORDMARK_VIEWBOX.height}"><g fill="#fff">${WORDMARK_PATHS.map(
-    (d) => `<path d="${d}"/>`,
-  ).join('')}</g></svg>`,
-)}")`;
+export const WORDMARK_IMAGE_SRC = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WORDMARK_VIEWBOX.width} ${WORDMARK_VIEWBOX.height}">` +
+    `<defs><linearGradient id="g" x1="0" y1="0" x2="0.45" y2="1">` +
+    `<stop offset="0" stop-color="#fff" stop-opacity="0.20"/>` +
+    `<stop offset="0.42" stop-color="#fff" stop-opacity="0.07"/>` +
+    `<stop offset="1" stop-color="#fff" stop-opacity="0.13"/>` +
+    `</linearGradient></defs>` +
+    `<g fill="url(#g)" stroke="#fff" stroke-opacity="0.22" stroke-width="1.6">` +
+    WORDMARK_PATHS.map((d) => `<path d="${d}"/>`).join('') +
+    `</g></svg>`,
+)}`;

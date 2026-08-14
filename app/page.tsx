@@ -17,7 +17,7 @@ import CanvasTitle from './_components/CanvasTitle';
 import { ReloadButton } from './_home/ReloadButton';
 import { HeroText } from './_home/HeroText';
 import { LoadingTitle } from './_home/LoadingTitle';
-import { GlassWordmark } from './_home/GlassWordmark';
+import { useGlassWordmark } from './_home/GlassWordmark/useGlassWordmark';
 import { CanvasPC } from './_home/Canvas/CanvasPC';
 import { CanvasNavKey } from './_home/Canvas/CanvasKey';
 import { GridBackground } from './_components/GridBackground';
@@ -93,6 +93,9 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   const canvasPCRef = useRef<Group>(null);
   const canvasNavKeyRef = useRef<HTMLDivElement>(null);
   const canvasTitleRef = useRef<HTMLDivElement>(null);
+  // タイトルの裏に敷く「seita」のガラス。タイトルと同じ流体で歪ませたいので
+  // DOM ではなく FluidTitleWarp の元絵へ描き込む
+  const drawGlassWordmark = useGlassWordmark(phase, skipIntro);
 
   // アニメーション；タイトル表示からヒーローコンテンツ表示
   // ---------------------------
@@ -112,8 +115,7 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
         // 大きく動くものは out 系だと前半に偏って忙しく見えるので inOut のまま伸ばす
         const tl = gsap.timeline({ delay: 0.9 });
         tl.from(canvasPCRef.current!.position, { y: -1, duration: 1.6, ease: 'power4.inOut' }, '<')
-          // 裏のガラスはタイトルと同じ tween にまとめて、ずれようがないようにする
-          .to([canvasTitleRef.current, '.glassWordmark'], { y: '-75%', duration: 1.6, ease: 'power2.inOut' }, '<0.15')
+          .to(canvasTitleRef.current, { y: '-75%', duration: 1.6, ease: 'power2.inOut' }, '<0.15')
           .fromTo('.gradientOverlay', { opacity: 0 }, { opacity: 1, duration: 1.4, ease: 'power2.inOut' }, '<0.15');
       }
     },
@@ -170,8 +172,6 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
 
       {/* タイトルテキスト */}
       <HeroText ref={heroTextRef} />
-      {/* タイトルの裏のガラス。CanvasTitle と同じ箱に載せて位置を揃えている */}
-      <GlassWordmark phase={phase} skipIntro={skipIntro} />
       <CanvasTitle
         ref={canvasTitleRef}
         phase={phase}
@@ -188,6 +188,7 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
       <FluidTitleWarp
         active={phase === 'title' || phase === 'hero'}
         sourceRef={canvasTitleRef}
+        underlay={drawGlassWordmark}
         className={`fixed inset-0 h-full w-full pointer-events-none ${skipIntro ? 'z-80' : 'z-92'}`}
       />
       {/* ページリロードボタン（ローディング画面の z-95 より前に出す） */}
