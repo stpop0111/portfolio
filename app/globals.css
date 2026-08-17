@@ -81,10 +81,11 @@ body {
 /* -------------------------------------------------
   ローディング画面（P[000]rtfolio）
 
-  マスクは「行にひとつ」だけ。文字ごとに箱を作ると、その数だけ端数の
-  パディングとマージンが重なってベースラインがピクセル格子から外れ、
-  字がにじむ。文字は素の inline-block（transform を効かせるためだけ）にして、
-  字間は letter-spacing、ベースラインの位置合わせは行に1回だけ掛ける。
+  文字は素の span（transform を効かせるため inline-block にしているだけ）で、
+  位置をずらす指定を一切持たない。普通のテキストと同じように1行で流れる。
+
+  退場で文字が「ベースラインの線の裏に潜って消える」ためにマスクが要るが、
+  それは h1 に overflow:hidden と高さを与えるだけ。文字側は動かさない。
 
   数値は Urbanist Bold (wght 700) のメトリクス（unitsPerEm 2000）から算出。
   - アセンダ上端（f）… ベースラインの 0.762em 上
@@ -92,11 +93,10 @@ body {
   - line-height:1 のときベースラインは行ボックス上端から 0.85em の位置
 ------------------------------------------------- */
 .loadingTitle {
-  --mask-h: 0.79em;   /* マスク＝白矩形の高さ。アセンダ上端をぎりぎり収める */
-  /* 行を持ち上げて、ベースラインをマスク下端の少し上（0.015em）に置くための量。
-     0.85em（行ボックス上端からベースライン）− (0.79em − 0.015em) = 0.075em
-     0.015em の余りは、o や 0 のオーバーシュートがクリップ線に触れないための逃げ */
-  --line-lift: 0.075em;
+  /* 行ボックス上端から数えたクリップ位置。ベースライン(0.85em)の 0.015em 下で切る。
+     この 0.015em は o や 0 のオーバーシュートがクリップ線に触れないための逃げ */
+  --clip-h: 0.865em;
+  --rect-h: 0.79em;   /* 白矩形の高さ。アセンダ上端〜ベースライン */
   --slot-w: 0.61em;   /* 数字1桁の幅。いちばん広い「0」の送り幅 0.6045em に合わせて固定 */
   --bleed: 0.08em;    /* 字面が送り幅からはみ出すぶんの逃げ */
 
@@ -115,34 +115,29 @@ body {
   -moz-osx-font-smoothing: auto;
 }
 
-/* 行全体をひとつのマスクにする。退場時はこの下端の裏に文字が潜り込んで消える。
+/* 退場で文字が消える線。高さを詰めて下を切っているだけで、中身は動かしていない。
    overflow は上下だけ効かせたいが、片方だけ visible にはできない
    （CSSの仕様上 auto に化ける）ので、左右にパディングを足してクリップ範囲を
    横に広げ、同じ量のネガティブマージンで見た目の幅を戻している */
-.loadingTitle__mask {
-  height: var(--mask-h);
+.loadingTitle__line {
+  height: var(--clip-h);
   overflow: hidden;
   padding-inline: var(--bleed);
   margin-inline: calc(var(--bleed) * -1);
-}
-
-.loadingTitle__line {
-  display: block;
-  margin-top: calc(var(--line-lift) * -1);
   white-space: nowrap;
 }
 
 /* transform を掛けるためだけの箱。インライン要素は transform が効かないので
-   inline-block にする。位置をずらす指定は一切持たせない */
+   inline-block にする。位置をずらす指定は持たせない */
 .loadingGlyph {
   display: inline-block;
 }
 
 /* カウンタの白矩形。overflow:hidden の inline-block はベースラインが下端になるので、
-   vertical-align でオーバーシュートぶんだけ沈めるとベースラインと下端が揃う */
+   vertical-align でオーバーシュートぶんだけ沈めると下端がクリップ線と揃う */
 .loadingTitle__reel {
   display: inline-flex;
-  height: var(--mask-h);
+  height: var(--rect-h);
   overflow: hidden;
   vertical-align: -0.015em;
   background-color: #fafafa;
@@ -152,22 +147,24 @@ body {
 /* 数字1桁のリール。直前の値〜新しい値までを積んだ列を持ち、下端を見せた状態で待機する */
 .loadingTitle__slot {
   width: var(--slot-w);
-  height: var(--mask-h);
+  height: var(--rect-h);
   overflow: hidden;
 }
 
-/* 実際に transform で回る列。行と同じだけ持ち上げてベースラインを揃える。
+/* 実際に transform で回る列。
    will-change: transform は付けない。常時付けると合成レイヤーに固定され、
    数字がレイヤー側の解像度でラスタライズされて輪郭が荒れることがある
    （回っている間の昇格は GSAP が面倒を見てくれる） */
 .loadingTitle__slotInner {
   display: block;
-  margin-top: calc(var(--line-lift) * -1);
 }
 
+/* line-height でベースラインの位置を決める。0.85 なら枠上端から 0.775em に来て、
+   矩形の下端（0.79em）の 0.015em 上に揃う。マージンでずらす必要がない */
 .loadingTitle__digit {
   display: block;
-  height: var(--mask-h);
+  height: var(--rect-h);
+  line-height: 0.85;
   text-align: center;
   letter-spacing: normal;
 }

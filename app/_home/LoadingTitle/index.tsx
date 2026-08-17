@@ -130,33 +130,31 @@ export function LoadingTitle({ phase, progress, onCountComplete, onExitComplete 
       ref={rootRef}
       className='loadingTitle font-urbanist fixed inset-0 z-95 flex items-center justify-center bg-zinc-950'
     >
-      {/* マスクは行にひとつだけ。文字は素の inline-block で並べる */}
-      <div className='loadingTitle__mask'>
-        <h1 className='loadingTitle__line'>
-          {PRE_TEXT.split('').map((char, i) => (
-            <span key={`pre-${i}`} className='loadingGlyph'>
-              {char}
-            </span>
-          ))}
-          <span className='loadingGlyph loadingTitle__reel'>
-            {digits.split('').map((digit, i) => (
-              <DigitReel
-                key={i}
-                char={digit}
-                prevChar={prevDigits[i]}
-                delay={i * DIGIT.stagger}
-                duration={DIGIT.duration}
-                ease={DIGIT.ease}
-              />
-            ))}
+      {/* 文字は素の span。退場で消すための切り取り線として h1 の高さを詰めているだけ */}
+      <h1 className='loadingTitle__line'>
+        {PRE_TEXT.split('').map((char, i) => (
+          <span key={`pre-${i}`} className='loadingGlyph'>
+            {char}
           </span>
-          {POST_TEXT.split('').map((char, i) => (
-            <span key={`post-${i}`} className='loadingGlyph'>
-              {char}
-            </span>
+        ))}
+        <span className='loadingGlyph loadingTitle__reel'>
+          {digits.split('').map((digit, i) => (
+            <DigitReel
+              key={i}
+              char={digit}
+              prevChar={prevDigits[i]}
+              delay={i * DIGIT.stagger}
+              duration={DIGIT.duration}
+              ease={DIGIT.ease}
+            />
           ))}
-        </h1>
-      </div>
+        </span>
+        {POST_TEXT.split('').map((char, i) => (
+          <span key={`post-${i}`} className='loadingGlyph'>
+            {char}
+          </span>
+        ))}
+      </h1>
     </div>
   );
 }
