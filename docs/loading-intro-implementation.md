@@ -4,7 +4,7 @@ Home の冒頭「ローディング画面 → タイトル表示 → ヒーロ�
 設計書（[hero-animation.md](./hero-animation.md)）が「何を作るか」なのに対し、
 こちらは **実際に何をどう作ったか** と、その判断の根拠をまとめたもの。
 
-対象ブランチ: `claude/loading-screen-implementation-lc3gvy`（12コミット）
+対象ブランチ: `claude/loading-screen-implementation-lc3gvy`（14コミット）
 元になった指示: PDF『ローディング⇨タイトル表示』の再設計版
 
 **追加・変更したファイルの中身は [付録A](#付録a-全ソース) にすべて収録している。**
@@ -135,32 +135,56 @@ paint 前に確定させるため `useLayoutEffect` を使う。値が変わら�
 
 ### 3-3. 文字組みの幾何（`globals.css`）
 
-すべて Urbanist Bold (wght 700, unitsPerEm 2000) のメトリクスから算出している。
+**マスクは行にひとつだけ。** 退場時に全文字が同じ水平線（ベースライン）で切れるので、
+文字ごとにマスクを持つ必要はない。文字は位置をずらす指定を一切持たない
+素の `inline-block`（`transform` を効かせるためだけ）。
+
+```
+.loadingTitle          ← font-size / letter-spacing / em の解決基準
+  └ .loadingTitle__mask   ← height: --mask-h + overflow: hidden（マスクはここだけ）
+      └ .loadingTitle__line  ← margin-top: -(--line-lift) でベースラインを合わせる
+          ├ .loadingGlyph  P
+          ├ .loadingGlyph.loadingTitle__reel  [087]
+          └ .loadingGlyph  r t f o l i o
+```
+
+数値は Urbanist Bold (wght 700, unitsPerEm 2000) のメトリクスから算出している。
 
 | 変数 | 値 | 根拠 |
 |---|---|---|
-| `--mask-h` | `0.79em` | アセンダ上端（`f` = 0.762em）＋ 余裕 |
-| `--baseline-drop` | `0.125em` | `line-height:1` のときベースラインは行ボックス下端から 0.15em。そこから少し浮かせる |
+| `--mask-h` | `0.79em` | マスク＝白矩形の高さ。アセンダ上端（`f` = 0.762em）をぎりぎり収める |
+| `--line-lift` | `0.075em` | `line-height:1` のベースラインは行ボックス上端から 0.85em。`0.85 - (0.79 - 0.015) = 0.075` |
 | `--slot-w` | `0.61em` | いちばん広い数字「0」の送り幅 0.6045em |
 | `--bleed` | `0.08em` | 字面が送り幅からはみ出すぶんの逃げ |
-| `--tracking` | `0.04em` | 字間を詰める量。この値で P が白矩形に接し、モックアップと同じ組みになる |
 
-**マスクの構造**：各文字を `overflow: hidden` の箱に入れ、退場時にその下端の裏へ
-潜り込ませて消す。PDF のモックアップを実測したところ、`rtfolio` の各文字の下端が
-すべて同じ y 座標で切れていたため、この構造が原案どおり。
+`--line-lift` の余り 0.015em は、`o` や `0` のオーバーシュート（ベースラインの
+0.013em 下）がクリップ線に触れないための逃げ。同じ変数をリールの列
+（`.loadingTitle__slotInner`）にも使っており、数値の出処はひとつ。
+
+**em の解決基準に注意**：`--mask-h` などを `em` で書いているので、`font-size` は
+マスクより**外側**（`.loadingTitle`）に置く必要がある。マスクの内側に置くと
+マスクの高さが本文サイズ基準（16px）で解決されて潰れる。
 
 **片側だけ overflow を visible にできない問題**：CSS の仕様上、片方を `visible` に
 すると他方が `auto` に化けてスクロールバーが出る。そこで**左右にパディングを足して
 クリップ範囲を横に広げ、同じ量のネガティブマージンで見た目の幅を戻す**方法を採った。
+マスクがひとつになったので、この指定も1箇所で済む。
 
 ```css
-padding-inline: var(--bleed);
-margin-inline: calc((var(--bleed) + var(--tracking) / 2) * -1);
+.loadingTitle__mask {
+  height: var(--mask-h);
+  overflow: hidden;
+  padding-inline: var(--bleed);
+  margin-inline: calc(var(--bleed) * -1);
+}
 ```
 
-マージンには `--tracking` の半分も足してあり、左右で半分ずつ負担するので
-文字間で詰まる量はちょうど `--tracking` になる。
-（`letter-spacing` は文字ごとに箱を分けている関係で使えない）
+字間は素直に `letter-spacing: -0.04em`。`inline-block` の間にも効く。
+この値で P が白矩形に接し、PDF のモックアップと同じ組みになる。
+
+**白矩形のベースライン合わせ**：`overflow: hidden` を持つ `inline-block` は
+ベースラインが下端になるという CSS の規定を使っている。`vertical-align: -0.015em` で
+オーバーシュートぶんだけ沈めると、矩形の下端と文字のベースラインが揃う。
 
 ### 3-4. フォント
 
@@ -313,7 +337,17 @@ Lightning CSS が片方へ潰して**標準プロパティのほうが落ちた*
 
 ### インライン要素に transform は効かない
 
-3-2 参照。リールが動かなかった原因。
+3-2 参照。リールが動かなかった原因。`inline-block` にすれば解決する。
+
+### 文字ごとに箱を作ると字がにじむ
+
+当初は文字ごとに flex 箱を作り、端数の em でパディング・ネガティブマージン・
+負の `margin-bottom` を重ねていた。結果、**9文字すべてが 0.08〜0.42px だけ
+ピクセル格子から外れて**いた。1文字ずつ別の箱に入れると、その数だけ端数が
+積み上がって字がにじむ。
+
+素のテキストとして1行で流し、位置合わせは行に1回だけ掛けるのが正しい。
+マスクも「全文字が同じ水平線で切れる」なら行にひとつで足りる。
 
 ---
 
@@ -541,14 +575,14 @@ export function LoadingTitle({ phase, progress, onCountComplete, onExitComplete 
       ref={rootRef}
       className='loadingTitle font-urbanist fixed inset-0 z-95 flex items-center justify-center bg-zinc-950'
     >
-      <h1 className='loadingTitle__line'>
-        {PRE_TEXT.split('').map((char, i) => (
-          <span key={`pre-${i}`} className='loadingTitle__cell'>
-            <span className='loadingGlyph loadingTitle__ink'>{char}</span>
-          </span>
-        ))}
-
-        <span className='loadingTitle__cell'>
+      {/* マスクは行にひとつだけ。文字は素の inline-block で並べる */}
+      <div className='loadingTitle__mask'>
+        <h1 className='loadingTitle__line'>
+          {PRE_TEXT.split('').map((char, i) => (
+            <span key={`pre-${i}`} className='loadingGlyph'>
+              {char}
+            </span>
+          ))}
           <span className='loadingGlyph loadingTitle__reel'>
             {digits.split('').map((digit, i) => (
               <DigitReel
@@ -561,14 +595,13 @@ export function LoadingTitle({ phase, progress, onCountComplete, onExitComplete 
               />
             ))}
           </span>
-        </span>
-
-        {POST_TEXT.split('').map((char, i) => (
-          <span key={`post-${i}`} className='loadingTitle__cell'>
-            <span className='loadingGlyph loadingTitle__ink'>{char}</span>
-          </span>
-        ))}
-      </h1>
+          {POST_TEXT.split('').map((char, i) => (
+            <span key={`post-${i}`} className='loadingGlyph'>
+              {char}
+            </span>
+          ))}
+        </h1>
+      </div>
     </div>
   );
 }
@@ -637,7 +670,7 @@ export function DigitReel({ char, prevChar, delay, duration, ease }: DigitReelPr
       <span ref={innerRef} className='loadingTitle__slotInner'>
         {cells.map((digit, i) => (
           <span key={i} className='loadingTitle__digit'>
-            <span className='loadingTitle__ink'>{digit}</span>
+            {digit}
           </span>
         ))}
       </span>
@@ -1092,85 +1125,89 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
 /* -------------------------------------------------
   ローディング画面（P[000]rtfolio）
 
-  数値はすべて Urbanist Bold (wght 700) のメトリクス（unitsPerEm 2000）から算出。
-  - アセンダ上端（f）… 0.762em ／ キャップハイト（P）… 0.700em
+  マスクは「行にひとつ」だけ。文字ごとに箱を作ると、その数だけ端数の
+  パディングとマージンが重なってベースラインがピクセル格子から外れ、
+  字がにじむ。文字は素の inline-block（transform を効かせるためだけ）にして、
+  字間は letter-spacing、ベースラインの位置合わせは行に1回だけ掛ける。
+
+  数値は Urbanist Bold (wght 700) のメトリクス（unitsPerEm 2000）から算出。
+  - アセンダ上端（f）… ベースラインの 0.762em 上
   - o と一部の数字のオーバーシュート … ベースラインの 0.013em 下
-  - line-height:1 のときベースラインは行ボックス下端から 0.15em の位置
-  マスクの下端をベースライン付近に合わせたいので、グリフを --baseline-drop 分だけ沈める。
+  - line-height:1 のときベースラインは行ボックス上端から 0.85em の位置
 ------------------------------------------------- */
 .loadingTitle {
-  --mask-h: 0.79em;         /* マスク＝白矩形の高さ。アセンダ上端〜ベースライン */
-  /* グリフを沈めてベースラインをマスク下端に寄せる量。
-     overflow のクリップ位置はピクセルに丸められるので、o や 0 のオーバーシュート
-     （ベースラインの 0.013em 下）がクリップ線に接しないよう少し余裕を残している */
-  --baseline-drop: 0.125em;
-  --slot-w: 0.61em;         /* 数字1桁の幅。いちばん広い「0」の送り幅 0.6045em に合わせて固定 */
-  --bleed: 0.08em;          /* 字面が送り幅からはみ出すぶんの逃げ。下の cell を参照 */
-  --tracking: 0.04em;       /* 字間を詰める量。文字ごとにマスクへ切っている関係で
-                               letter-spacing が効かないため、cell のマージンで詰める */
-}
+  --mask-h: 0.79em;   /* マスク＝白矩形の高さ。アセンダ上端をぎりぎり収める */
+  /* 行を持ち上げて、ベースラインをマスク下端の少し上（0.015em）に置くための量。
+     0.85em（行ボックス上端からベースライン）− (0.79em − 0.015em) = 0.075em
+     0.015em の余りは、o や 0 のオーバーシュートがクリップ線に触れないための逃げ */
+  --line-lift: 0.075em;
+  --slot-w: 0.61em;   /* 数字1桁の幅。いちばん広い「0」の送り幅 0.6045em に合わせて固定 */
+  --bleed: 0.08em;    /* 字面が送り幅からはみ出すぶんの逃げ */
 
-.loadingTitle__line {
-  display: flex;
-  align-items: flex-end;
-  line-height: 1;
-  font-weight: 700;
+  /* 上の em はすべてこの font-size で解決される。マスクより外側に置かないと
+     マスクの高さが本文サイズ基準になって潰れる */
   font-size: clamp(2rem, 17.5vw, 18rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
   color: #fafafa;
 }
 
-/* 1文字分のマスク。退場時はこの下端の裏に文字が潜り込んで消える。
+/* 行全体をひとつのマスクにする。退場時はこの下端の裏に文字が潜り込んで消える。
    overflow は上下だけ効かせたいが、片方だけ visible にはできない
-   （CSSの仕様上 auto に化ける）ので、左右にパディングを足して
-   クリップ範囲を横に広げ、同じ量のネガティブマージンで見た目の幅を戻している。
-   これで f のように字面が送り幅からはみ出す文字も切れない。
-   マージンにはさらに --tracking の半分を足して、隣り合う文字の間隔を詰めている
-   （左右で半分ずつ負担するので、文字間で詰まる量はちょうど --tracking になる） */
-.loadingTitle__cell {
-  display: flex;
-  align-items: flex-end;
+   （CSSの仕様上 auto に化ける）ので、左右にパディングを足してクリップ範囲を
+   横に広げ、同じ量のネガティブマージンで見た目の幅を戻している */
+.loadingTitle__mask {
   height: var(--mask-h);
   overflow: hidden;
   padding-inline: var(--bleed);
-  margin-inline: calc((var(--bleed) + var(--tracking) / 2) * -1);
+  margin-inline: calc(var(--bleed) * -1);
 }
 
-/* マスクの中で実際に字面を持つ要素。ベースラインをマスク下端に揃える */
-.loadingTitle__ink {
+.loadingTitle__line {
   display: block;
-  margin-bottom: calc(var(--baseline-drop) * -1);
+  margin-top: calc(var(--line-lift) * -1);
+  white-space: nowrap;
 }
 
-/* カウンタの白矩形。中で桁ごとにベースラインを取るので自身は下端揃えのまま */
+/* transform を掛けるためだけの箱。インライン要素は transform が効かないので
+   inline-block にする。位置をずらす指定は一切持たせない */
+.loadingGlyph {
+  display: inline-block;
+}
+
+/* カウンタの白矩形。overflow:hidden の inline-block はベースラインが下端になるので、
+   vertical-align でオーバーシュートぶんだけ沈めるとベースラインと下端が揃う */
 .loadingTitle__reel {
-  display: flex;
-  align-items: flex-end;
+  display: inline-flex;
   height: var(--mask-h);
+  overflow: hidden;
+  vertical-align: -0.015em;
   background-color: #fafafa;
   color: #111;
 }
 
 /* 数字1桁のリール。直前の値〜新しい値までを積んだ列を持ち、下端を見せた状態で待機する */
 .loadingTitle__slot {
-  display: block;
   width: var(--slot-w);
   height: var(--mask-h);
   overflow: hidden;
 }
 
-/* 実際に transform で回る列。インラインのままだと transform が効かないので block にする。
+/* 実際に transform で回る列。行と同じだけ持ち上げてベースラインを揃える。
    will-change: transform は付けない。常時付けると合成レイヤーに固定され、
    数字がレイヤー側の解像度でラスタライズされて輪郭が荒れることがある
    （回っている間の昇格は GSAP が面倒を見てくれる） */
 .loadingTitle__slotInner {
   display: block;
+  margin-top: calc(var(--line-lift) * -1);
 }
 
 .loadingTitle__digit {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  display: block;
   height: var(--mask-h);
+  text-align: center;
+  letter-spacing: normal;
 }
 ```
 
