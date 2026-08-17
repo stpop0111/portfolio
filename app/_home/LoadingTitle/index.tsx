@@ -130,14 +130,14 @@ export function LoadingTitle({ phase, progress, onCountComplete, onExitComplete 
       ref={rootRef}
       className='loadingTitle font-urbanist fixed inset-0 z-95 flex items-center justify-center bg-zinc-950'
     >
-      <h1 className='loadingTitle__line'>
-        {PRE_TEXT.split('').map((char, i) => (
-          <span key={`pre-${i}`} className='loadingTitle__cell'>
-            <span className='loadingGlyph loadingTitle__ink'>{char}</span>
-          </span>
-        ))}
-
-        <span className='loadingTitle__cell'>
+      {/* マスクは行にひとつだけ。文字は素の inline-block で並べる */}
+      <div className='loadingTitle__mask'>
+        <h1 className='loadingTitle__line'>
+          {PRE_TEXT.split('').map((char, i) => (
+            <span key={`pre-${i}`} className='loadingGlyph'>
+              {char}
+            </span>
+          ))}
           <span className='loadingGlyph loadingTitle__reel'>
             {digits.split('').map((digit, i) => (
               <DigitReel
@@ -150,14 +150,13 @@ export function LoadingTitle({ phase, progress, onCountComplete, onExitComplete 
               />
             ))}
           </span>
-        </span>
-
-        {POST_TEXT.split('').map((char, i) => (
-          <span key={`post-${i}`} className='loadingTitle__cell'>
-            <span className='loadingGlyph loadingTitle__ink'>{char}</span>
-          </span>
-        ))}
-      </h1>
+          {POST_TEXT.split('').map((char, i) => (
+            <span key={`post-${i}`} className='loadingGlyph'>
+              {char}
+            </span>
+          ))}
+        </h1>
+      </div>
     </div>
   );
 }

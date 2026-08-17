@@ -56,7 +56,7 @@ export function DigitReel({ char, prevChar, delay, duration, ease }: DigitReelPr
       <span ref={innerRef} className='loadingTitle__slotInner'>
         {cells.map((digit, i) => (
           <span key={i} className='loadingTitle__digit'>
-            <span className='loadingTitle__ink'>{digit}</span>
+            {digit}
           </span>
         ))}
       </span>
