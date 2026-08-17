@@ -4,7 +4,7 @@ Home の冒頭「ローディング画面 → タイトル表示 → ヒーロ�
 設計書（[hero-animation.md](./hero-animation.md)）が「何を作るか」なのに対し、
 こちらは **実際に何をどう作ったか** と、その判断の根拠をまとめたもの。
 
-対象ブランチ: `claude/loading-screen-implementation-lc3gvy`（16コミット）
+対象ブランチ: `claude/loading-screen-implementation-lc3gvy`（18コミット）
 元になった指示: PDF『ローディング⇨タイトル表示』の再設計版
 
 **追加・変更したファイルの中身は [付録A](#付録a-全ソース) にすべて収録している。**
@@ -172,6 +172,29 @@ y 座標で切れていたので、切り取り線は行にひとつで足りる
 **em の解決基準に注意**：`--clip-h` などを `em` で書いているので、`font-size` は
 切り取る箱より**外側**（`.loadingTitle`）に置く必要がある。内側に置くと
 高さが本文サイズ基準（16px）で解決されて潰れる。
+
+**文字サイズは vw ではなく固定 px の段階指定**。この大きさの文字は、縦線が
+ピクセル格子のどこに落ちるかで鮮明さが変わる。同じ画面幅でサイズだけ変えて
+測ると、264px は 0.0179、265px は 0.0242（縁の中間調 / 白の比）で **35% 違う**。
+「整数なら綺麗」という規則性も無い。`vw` だと画面幅ごとに当たり外れが出て
+制御できないので、段ごとに値を決め打ちしている。
+
+| min-width | font-size | 下限での行幅 |
+|---|---|---|
+| 0 | 56px | 86% |
+| 480 | 84px | 86% |
+| 640 | 112px | 86% |
+| 768 | 134px | 86% |
+| 1024 | 178px | 86% |
+| 1280 | 224px | 86% |
+| 1440 | 252px | 86% |
+| 1600 | 280px | 86% |
+| 1680 | 288px | 85% |
+
+値は従来の `clamp(2rem, 17.5vw, 18rem)` が各段の下限で取っていたサイズに
+合わせてあるので、見た目の大きさは実質変わらない。行の外形は font-size の
+約 4.9 倍。全幅ではみ出しが無いことを確認済み。
+気になる段があれば、その段の値だけを数 px 動かせばよい。
 
 **片側だけ overflow を visible にできない問題**：CSS の仕様上、片方を `visible` に
 すると他方が `auto` に化けてスクロールバーが出る。左右にパディングを足して
@@ -353,6 +376,17 @@ Lightning CSS が片方へ潰して**標準プロパティのほうが落ちた*
 
 3-2 参照。リールが動かなかった原因。`inline-block` にすれば解決する。
 
+### 巨大な文字の鮮明さはサイズで変わる
+
+250px 級の文字は、縦線がピクセル格子のどこに落ちるかで鮮明さが変わる。
+264px と 265px で縁の中間調が 35% 違い、整数か端数かという規則性も無い。
+`vw` で連続的に変えると画面幅ごとに当たり外れが出るので、固定 px の
+段階指定にして「使うサイズ」を決め打ちしている。
+
+なお `overflow: hidden` のクリップは無関係。クリップ有無で描画を比較すると、
+差が出るのは最下部の 15〜17px だけで、文字本体は 1px も変わらない。
+`letter-spacing` と `text-rendering` も測ったが誤差の範囲だった。
+
 ### 文字に位置指定を掛けない
 
 当初は文字ごとに flex 箱を作り、端数の em でパディング・ネガティブマージン・
@@ -372,7 +406,8 @@ Lightning CSS が片方へ潰して**標準プロパティのほうが落ちた*
 |---|---|
 | カウントアップの各秒数 | `LoadingTitle/index.tsx` 冒頭の定数ブロック |
 | イントロ全体を短く | 同 `MIN_DURATION`（1.5 → 1.0 で検知2回、約1.6秒短縮） |
-| 文字の大きさ・字間・マスク | `globals.css` の `.loadingTitle` の CSS 変数 |
+| 文字の大きさ | `globals.css` の `.loadingTitle` のメディアクエリ（段ごとの px） |
+| 字間・マスク・矩形の寸法 | `globals.css` の `.loadingTitle` の CSS 変数 |
 | ガラスの濃さ・ふちの光 | `GlassWordmark/wordmarkPaths.ts` の `WORDMARK_IMAGE_SRC` |
 | ガラスの大きさ | `useGlassWordmark.ts` の `WIDTH` |
 | タイトルを読ませる時間 | `page.tsx` の `setTimeout(..., 2600)` |
@@ -411,7 +446,7 @@ Stage 1・2 の記述（`Loading...` の点滅、ブラー遷移）が現状と�
 
 ### D. SP 未対応 🟡
 
-`font-size: clamp(2rem, 17.5vw, 18rem)` で縮むだけ。スマホだと
+文字サイズは 480px 未満で 56px、480px 以上で 84px の2段しか無い。スマホだと
 `P[000]rtfolio` がかなり細くなる。ガラスも `43vw` 固定なので要確認。実機を見てから調整。
 
 ### E. HeroText が空の器 🟢
@@ -1158,8 +1193,16 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   --bleed: 0.08em;    /* 字面が送り幅からはみ出すぶんの逃げ */
 
   /* 上の em はすべてこの font-size で解決される。マスクより外側に置かないと
-     マスクの高さが本文サイズ基準になって潰れる */
-  font-size: clamp(2rem, 17.5vw, 18rem);
+     マスクの高さが本文サイズ基準になって潰れる。
+
+     vw ではなく px で段階指定にしている。この大きさの文字は、縦線が
+     ピクセル格子のどこに落ちるかで鮮明さが変わる（実測：264px と 265px で
+     縁の中間調が 35% 違う）。vw だと画面幅ごとに当たり外れが出て制御できないので、
+     段ごとに値を決め打ちして、狙ったサイズだけを使う。
+     見え方が気になる段があれば、その段の値だけを数 px 動かせばよい。
+     値は従来の 17.5vw が各下限で取っていたサイズに合わせてある（上限 288px も踏襲）。
+     行の外形は font-size の約 4.9 倍なので、下限幅の 86% 前後に収まる */
+  font-size: 56px;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -1171,6 +1214,16 @@ function Home({ skipIntro }: { skipIntro: boolean }) {
   -webkit-font-smoothing: subpixel-antialiased;
   -moz-osx-font-smoothing: auto;
 }
+
+/* 段ごとの文字サイズ。ここだけ見れば大きさを調整できる */
+@media (min-width: 480px)  { .loadingTitle { font-size: 84px; } }
+@media (min-width: 640px)  { .loadingTitle { font-size: 112px; } }
+@media (min-width: 768px)  { .loadingTitle { font-size: 134px; } }
+@media (min-width: 1024px) { .loadingTitle { font-size: 178px; } }
+@media (min-width: 1280px) { .loadingTitle { font-size: 224px; } }
+@media (min-width: 1440px) { .loadingTitle { font-size: 252px; } }
+@media (min-width: 1600px) { .loadingTitle { font-size: 280px; } }
+@media (min-width: 1680px) { .loadingTitle { font-size: 288px; } }
 
 /* 退場で文字が消える線。高さを詰めて下を切っているだけで、中身は動かしていない。
    overflow は上下だけ効かせたいが、片方だけ visible にはできない
