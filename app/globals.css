@@ -107,6 +107,12 @@ body {
   line-height: 1;
   letter-spacing: -0.04em;
   color: #fafafa;
+
+  /* html に付いている Tailwind の antialiased（-webkit-font-smoothing: antialiased）を
+     この画面だけ打ち消す。macOS ではグレースケール描画になって字が細く・やわらかく出るため、
+     250px 級の太字だと「ボケている」ように見える。既定のサブピクセル描画に戻す */
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
 }
 
 /* 行全体をひとつのマスクにする。退場時はこの下端の裏に文字が潜り込んで消える。
