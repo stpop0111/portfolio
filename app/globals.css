@@ -101,8 +101,16 @@ body {
   --bleed: 0.08em;    /* 字面が送り幅からはみ出すぶんの逃げ */
 
   /* 上の em はすべてこの font-size で解決される。マスクより外側に置かないと
-     マスクの高さが本文サイズ基準になって潰れる */
-  font-size: clamp(2rem, 17.5vw, 18rem);
+     マスクの高さが本文サイズ基準になって潰れる。
+
+     vw ではなく px で段階指定にしている。この大きさの文字は、縦線が
+     ピクセル格子のどこに落ちるかで鮮明さが変わる（実測：264px と 265px で
+     縁の中間調が 35% 違う）。vw だと画面幅ごとに当たり外れが出て制御できないので、
+     段ごとに値を決め打ちして、狙ったサイズだけを使う。
+     見え方が気になる段があれば、その段の値だけを数 px 動かせばよい。
+     値は従来の 17.5vw が各下限で取っていたサイズに合わせてある（上限 288px も踏襲）。
+     行の外形は font-size の約 4.9 倍なので、下限幅の 86% 前後に収まる */
+  font-size: 56px;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -114,6 +122,16 @@ body {
   -webkit-font-smoothing: subpixel-antialiased;
   -moz-osx-font-smoothing: auto;
 }
+
+/* 段ごとの文字サイズ。ここだけ見れば大きさを調整できる */
+@media (min-width: 480px)  { .loadingTitle { font-size: 84px; } }
+@media (min-width: 640px)  { .loadingTitle { font-size: 112px; } }
+@media (min-width: 768px)  { .loadingTitle { font-size: 134px; } }
+@media (min-width: 1024px) { .loadingTitle { font-size: 178px; } }
+@media (min-width: 1280px) { .loadingTitle { font-size: 224px; } }
+@media (min-width: 1440px) { .loadingTitle { font-size: 252px; } }
+@media (min-width: 1600px) { .loadingTitle { font-size: 280px; } }
+@media (min-width: 1680px) { .loadingTitle { font-size: 288px; } }
 
 /* 退場で文字が消える線。高さを詰めて下を切っているだけで、中身は動かしていない。
    overflow は上下だけ効かせたいが、片方だけ visible にはできない
