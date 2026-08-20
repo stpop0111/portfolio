@@ -18,7 +18,7 @@ import {
   CAMERA_FAR,
   CAMERA_INITIAL,
   CAMERA_NEAR,
-  MONITOR_NODE_NAME,
+  FOCUS_NODES,
   useProductCamera,
   type FocusMode,
 } from './useProductCamera';
@@ -88,9 +88,9 @@ function ProductCamera({
 }
 
 /**
- * ピント面をモニターのジオメトリーに合わせる。
+ * ピント面を対象メッシュに合わせる。
  *
- * モニターはポインターに合わせて回るので前面までの距離が毎フレーム変わる。
+ * モニターはポインターに合わせて回るので距離が毎フレーム変わる。
  * focusDistance を React の prop で渡すと DepthOfField が作り直されてしまうので、
  * 効果の cocMaterial を直接書き換える。
  */
@@ -114,20 +114,43 @@ function FocusRig({
   const get = useThree((state) => state.get);
   const markerRef = useRef<THREE.Mesh>(null);
   // 毎フレーム new しないよう使い回す
-  const [box] = useState(() => new THREE.Box3());
+  const [center] = useState(() => new THREE.Vector3());
+  const [size] = useState(() => new THREE.Vector3());
+  const [localCamera] = useState(() => new THREE.Vector3());
+  const [inverse] = useState(() => new THREE.Matrix4());
   const [point] = useState(() => new THREE.Vector3());
 
   useFrame(() => {
     const { camera, scene } = get();
-    const monitor = mode === 'manual' ? null : scene.getObjectByName(MONITOR_NODE_NAME);
+    const nodeName = mode === 'manual' ? null : FOCUS_NODES[mode];
+    const mesh = nodeName ? (scene.getObjectByName(nodeName) as THREE.Mesh | undefined) : undefined;
 
-    if (monitor) {
-      // Box3.setFromObject は geometry のキャッシュ済みバウンディングボックスを
-      // 使うので、毎フレーム呼んでも頂点は舐めない
-      box.setFromObject(monitor);
-      // 前面＝箱のうちカメラにいちばん近い点。clampPoint が外側の点を面へ寄せる
-      if (mode === 'center') box.getCenter(point);
-      else box.clampPoint(camera.position, point);
+    if (mesh?.geometry) {
+      // geometry.boundingBox はジオメトリ空間（＝メッシュのローカル）。
+      // 一度計算すれば three.js が持ち続けるので毎フレームの頂点走査は起きない
+      if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+      const localBox = mesh.geometry.boundingBox!;
+      localBox.getCenter(center);
+      localBox.getSize(size);
+      point.copy(center);
+
+      // 液晶のような板なら、板の表面のまんなかを狙いたい。
+      // いちばん薄い軸が板の厚み方向なので、その面へ中心をずらす。
+      // 「6面のうちカメラに近いもの」で選ぶと、首を振ったとき横に長い面の中心が
+      // 先に近づいて画面の端へ飛ぶので、軸は形から決める
+      const extents = [size.x, size.y, size.z];
+      const thin = extents.indexOf(Math.min(...extents));
+      const others = extents.filter((_, i) => i !== thin);
+      const isPlate = extents[thin] * 2 < Math.min(...others);
+
+      if (isPlate) {
+        // 板の裏表どちらを向いているかはカメラ位置をローカルへ移して判断する
+        localCamera.copy(camera.position).applyMatrix4(inverse.copy(mesh.matrixWorld).invert());
+        const half = extents[thin] / 2;
+        const towardCamera = localCamera.getComponent(thin) > center.getComponent(thin) ? half : -half;
+        point.setComponent(thin, point.getComponent(thin) + towardCamera);
+      }
+      point.applyMatrix4(mesh.matrixWorld);
     } else {
       // 手動：視線方向に指定距離だけ進んだ点
       camera.getWorldDirection(point).multiplyScalar(manual).add(camera.position);

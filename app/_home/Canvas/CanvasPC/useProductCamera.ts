@@ -4,11 +4,20 @@ import { useEffect, useRef } from 'react';
 import { button, folder, monitor, useControls } from 'leva';
 import { depthOfField, productShot, verticalFov, type SensorName } from '../../../_utils/cameraPresets';
 
-/** ピントをどこに置くか。front / center はモニターのジオメトリーに追従する */
-export type FocusMode = 'front' | 'center' | 'manual';
+/** ピントをどこに置くか。screen / body はメッシュに追従する */
+export type FocusMode = 'screen' | 'body' | 'manual';
 
-/** モニターのジオメトリーを探すときに使う GLB のノード名 */
-export const MONITOR_NODE_NAME = 'monitor';
+/**
+ * ピントを合わせるメッシュの名前（GLB のノード名）。
+ * 親の monitor は筐体と液晶をまとめた Group なので、そのバウンディングボックスを
+ * 使うと首を振ったときに箱の角へピントが寄ってしまう。狙うメッシュを直接指す。
+ */
+export const FOCUS_NODES = {
+  /** 液晶（Model.tsx がキャンバステクスチャを貼っている面） */
+  screen: 'mesh__monitor_1',
+  /** 筐体 */
+  body: 'mesh__monitor',
+} as const;
 
 /**
  * PC のカメラを Leva から触るためのフック。
@@ -122,8 +131,8 @@ export function useProductCamera() {
     ピント: folder({
       focusMode: {
         label: 'ピントの置き方',
-        value: 'front' as FocusMode,
-        options: { 'モニター前面': 'front', 'モニター中心': 'center', '手動': 'manual' },
+        value: 'screen' as FocusMode,
+        options: { '液晶': 'screen', '筐体': 'body', '手動': 'manual' },
       },
       focusOffset: { label: '前後の微調整', value: 0, min: -1, max: 1, step: 0.005 },
       focusManual: {
