@@ -13,20 +13,25 @@ import { Bloom, EffectComposer, N8AO } from '@react-three/postprocessing';
 import { productShot } from '../../../_utils/cameraPresets';
 
 // ---------------------------
-// カメラ：中判 + 100mm マクロの物撮りを想定した設定
+// カメラ：中判 + 135mm の物撮りを想定した設定
 // ---------------------------
 // 直交投影は面がまったく収束しないので図面寄りに見える。実機の物撮りに寄せるため
-// パースペクティブへ。ただし 100mm は望遠側なので収束はごく浅く、
+// パースペクティブへ。ただし望遠側なので収束はごく浅く、
 // プロダクトカタログのような「わずかに立体が回り込む」程度に収まる。
-//   ・中判（Phase One XF IQ4 / Hasselblad, 53.4 x 40mm）@100mm → 垂直画角 22.62°
-//   ・フルサイズ（EOS R5 / α7R V, 36 x 24mm）@100mm なら 13.69°
+//   ・中判（Phase One XF IQ4 / Hasselblad, 53.4 x 40mm）@135mm → 垂直画角 16.85°
+//     （参考：同じ中判の @100mm なら 22.62°）
+//   ・フルサイズ（EOS R5 / α7R V, 36 x 24mm）@135mm なら 10.16°
 //     → さらにパースが浅くなる。切り替えは sensor を 'fullFrame' にするだけ
 // F8〜F16 相当の被写界深度なので DepthOfField（ボケ）は入れない。
 // ISO 100 / 三脚なので粒子ノイズもカメラの揺れも足さない（動くのは被写体側だけ）。
+// 注意：望遠にするほどカメラは後ろへ下がる。視線が 10.2° 上向きなので、
+// 135mm ではカメラの y が -1.85 となり Model.tsx の影受け平面（y=-1.6）より下に来る。
+// いまは平面が裏面カリングで消えるため見た目に影響はないが、
+// 影受けを両面にしたり別マテリアルへ変えると画面を塞ぐので注意。
 const CAMERA_TARGET: [number, number, number] = [0, 0.06, 0];
 const CAMERA = productShot({
   sensor: 'mediumFormat',
-  focalLength: 100,
+  focalLength: 135,
   target: CAMERA_TARGET,
   // 直交投影のときの視線（[0,-0.3,2] → [0,0.06,0]）をそのまま使い、アングルは変えない
   direction: [0, -0.36, 2],
