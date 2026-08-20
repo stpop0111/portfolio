@@ -1,16 +1,18 @@
 'use client';
 
 // React
-import { Suspense } from 'react';
+import { Suspense, useLayoutEffect } from 'react';
 // THREE
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { ContactShadows, Environment, Lightformer, Preload } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Group } from 'three';
+// Leva（開発時のカメラ調整パネル）
+import { Leva } from 'leva';
 // コンポーネント
 import { PC } from './Model';
-import { Bloom, EffectComposer, N8AO } from '@react-three/postprocessing';
-import { productShot } from '../../../_utils/cameraPresets';
+import { Bloom, DepthOfField, EffectComposer, N8AO } from '@react-three/postprocessing';
+import { CAMERA_FAR, CAMERA_INITIAL, CAMERA_NEAR, useProductCamera } from './useProductCamera';
 
 // ---------------------------
 // カメラ：中判 + 80mm の物撮りを想定した設定
@@ -21,25 +23,60 @@ import { productShot } from '../../../_utils/cameraPresets';
 //   ・中判（Phase One XF IQ4 / Hasselblad, 53.4 x 40mm）@80mm → 垂直画角 28.07°
 //     （参考：同じ中判の @100mm なら 22.62°、@135mm なら 16.85°）
 //   ・フルサイズ（EOS R5 / α7R V, 36 x 24mm）@80mm なら 17.06°
-//     → パースが浅くなる。切り替えは sensor を 'fullFrame' にするだけ
-// F8〜F16 相当の被写界深度なので DepthOfField（ボケ）は入れない。
 // ISO 100 / 三脚なので粒子ノイズもカメラの揺れも足さない（動くのは被写体側だけ）。
 // 注意：望遠にするほどカメラは後ろへ下がり、視線が 10.2° 上向きなので同時に沈む。
 // この中判構成では約 116mm を超えるとカメラの y が Model.tsx の影受け平面
 // （y=-1.6）より下に来る。80mm では y=-1.12 なので平面より上に収まっている。
-const CAMERA_TARGET: [number, number, number] = [0, 0.06, 0];
-const CAMERA = productShot({
-  sensor: 'mediumFormat',
-  focalLength: 80,
-  target: CAMERA_TARGET,
-  // 直交投影のときの視線（[0,-0.3,2] → [0,0.06,0]）をそのまま使い、アングルは変えない
-  direction: [0, -0.36, 2],
-  // 旧 zoom 300 × 画面高 900px と同じ写り。基準面で縦 3 ワールド単位
-  frameHeight: 3,
-  // ピントを置く面＝PC の前面。注視点より 0.67 ほど手前にあり、
-  // ここで合わせないと直交投影のときより 1 割ほど大きく写ってしまう
-  subjectDepth: 0.67,
-});
+//
+// 数値の実体と Leva パネルの中身は ./useProductCamera.ts にある。
+// パネルはあくまで調整用で、既定値＝いま公開している見た目。
+
+// Canvas 生成時のカメラ。毎回同じ参照を渡さないと R3F がカメラを作り直すので
+// モジュールスコープに固定しておく（実際の制御は下の ProductCamera 側）
+const INITIAL_CAMERA = {
+  fov: CAMERA_INITIAL.fov,
+  position: CAMERA_INITIAL.position,
+  near: CAMERA_NEAR,
+  far: CAMERA_FAR,
+};
+
+/**
+ * Leva の値でカメラを動かす。
+ * drei の PerspectiveCamera に makeDefault を付けるとカメラが二つになり、
+ * EffectComposer の RenderPass がどちらを掴むかで絵がずれる。
+ * Canvas が最初に作ったカメラをそのまま書き換えるほうが確実。
+ */
+function ProductCamera({
+  fov,
+  position,
+  target,
+  near,
+  far,
+}: {
+  fov: number;
+  position: [number, number, number];
+  target: [number, number, number];
+  near: number;
+  far: number;
+}) {
+  const get = useThree((state) => state.get);
+  // リサイズ時は R3F が aspect を入れ直すので、そのあとで向きを取り直す
+  const size = useThree((state) => state.size);
+  const [px, py, pz] = position;
+  const [tx, ty, tz] = target;
+
+  useLayoutEffect(() => {
+    const camera = get().camera as THREE.PerspectiveCamera;
+    camera.fov = fov;
+    camera.near = near;
+    camera.far = far;
+    camera.position.set(px, py, pz);
+    camera.lookAt(tx, ty, tz);
+    camera.updateProjectionMatrix();
+  }, [get, size, fov, near, far, px, py, pz, tx, ty, tz]);
+
+  return null;
+}
 
 export function CanvasPC({
   ref,
@@ -50,65 +87,92 @@ export function CanvasPC({
   hoveredKey: string | null;
   onReady?: () => void;
 }) {
+  const camera = useProductCamera();
+
   return (
-    <div className='fixed inset-0 z-30 pointer-events-none'>
-      <Canvas
-        // near/far は被写体の周りだけに絞る。パースは深度バッファが非線形なので、
-        // 既定の 0.1〜1000 のままだと精度が落ちて N8AO の陰りが荒れる
-        camera={{ fov: CAMERA.fov, position: CAMERA.position, near: 0.5, far: 100 }}
-        shadows='soft'
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.15 }}
-        onCreated={({ camera, gl }) => { camera.lookAt(...CAMERA_TARGET); gl.outputColorSpace = THREE.SRGBColorSpace; gl.setPixelRatio(1); }}
-      >
+    <>
+      {/* 本番ではパネルを畳んで隠す。値は useControls の既定値がそのまま効く */}
+      <Leva collapsed hidden={process.env.NODE_ENV === 'production'} titleBar={{ title: 'PC カメラ' }} />
+      <div className='fixed inset-0 z-30 pointer-events-none'>
+        <Canvas
+          // near/far は被写体の周りだけに絞る。パースは深度バッファが非線形なので、
+          // 既定の 0.1〜1000 のままだと精度が落ちて N8AO の陰りが荒れる
+          camera={INITIAL_CAMERA}
+          shadows='soft'
+          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.15 }}
+          onCreated={({ gl }) => { gl.outputColorSpace = THREE.SRGBColorSpace; gl.setPixelRatio(1); }}
+        >
+          <ProductCamera
+            fov={camera.fov}
+            position={camera.position}
+            target={camera.target}
+            near={camera.near}
+            far={camera.far}
+          />
 
-        <Environment resolution={512} background={false}>
-          {/* 背景*/}
-          <color attach='background' args={['#050505']} />
+          <Environment resolution={512} background={false}>
+            {/* 背景*/}
+            <color attach='background' args={['#050505']} />
 
-          {/* 主光源のソフトボックス：左手前・大きく縦長 */}
-          <Lightformer form='rect' intensity={4.5} position={[-6, 2, 2.5]} rotation={[0, Math.PI / 2.6, 0]} scale={[6, 8, 1]} color='#ffffff' />
-          {/* 天井のトップライト：上面をなだらかに起こす横長の板 */}
-          <Lightformer form='rect' intensity={7} position={[-1, 7, 0.5]} rotation={[Math.PI / 2, 0, 0]} scale={[12, 8, 1]} color='#f2f6ff' />
+            {/* 主光源のソフトボックス：左手前・大きく縦長 */}
+            <Lightformer form='rect' intensity={4.5} position={[-6, 2, 2.5]} rotation={[0, Math.PI / 2.6, 0]} scale={[6, 8, 1]} color='#ffffff' />
+            {/* 天井のトップライト：上面をなだらかに起こす横長の板 */}
+            <Lightformer form='rect' intensity={7} position={[-1, 7, 0.5]} rotation={[Math.PI / 2, 0, 0]} scale={[12, 8, 1]} color='#f2f6ff' />
 
-          {/* 右側のごく弱い板：影側が完全に潰れないための最小限の反射 */}
-          <Lightformer form='rect' intensity={0.12} position={[5.5, 1, 2]} rotation={[0, -Math.PI / 2.6, 0]} scale={[5, 6, 1]} color='#9fb0c6' />
+            {/* 右側のごく弱い板：影側が完全に潰れないための最小限の反射 */}
+            <Lightformer form='rect' intensity={0.12} position={[5.5, 1, 2]} rotation={[0, -Math.PI / 2.6, 0]} scale={[5, 6, 1]} color='#9fb0c6' />
 
-          {/* 背後のリム用ストリップ：エッジに細い光の線を作る */}
-          <Lightformer form='rect' intensity={6} position={[3, 2.5, -5]} rotation={[0, Math.PI, 0]} scale={[0.6, 8, 1]} color='#ffffff' />
-          <Lightformer form='rect' intensity={3} position={[-3.5, 2, -5]} rotation={[0, Math.PI, 0]} scale={[0.5, 7, 1]} color='#dfe8f5' />
-        </Environment>
+            {/* 背後のリム用ストリップ：エッジに細い光の線を作る */}
+            <Lightformer form='rect' intensity={6} position={[3, 2.5, -5]} rotation={[0, Math.PI, 0]} scale={[0.6, 8, 1]} color='#ffffff' />
+            <Lightformer form='rect' intensity={3} position={[-3.5, 2, -5]} rotation={[0, Math.PI, 0]} scale={[0.5, 7, 1]} color='#dfe8f5' />
+          </Environment>
 
-        <spotLight
-          position={[-5, 4, 3.5]}
-          angle={1.0}   
-          penumbra={0.1}
-          decay={2}
-          distance={40}
-          intensity={190}
-          color='#ffffff'
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          shadow-camera-near={0.5}
-          shadow-camera-far={35}
-          shadow-bias={-0.0004}
-          shadow-normalBias={0.015}
-          shadow-radius={1}
-        />
+          <spotLight
+            position={[-5, 4, 3.5]}
+            angle={1.0}   
+            penumbra={0.1}
+            decay={2}
+            distance={40}
+            intensity={190}
+            color='#ffffff'
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+            shadow-camera-near={0.5}
+            shadow-camera-far={35}
+            shadow-bias={-0.0004}
+            shadow-normalBias={0.015}
+            shadow-radius={1}
+          />
 
-        <ambientLight intensity={0.02} />
+          <ambientLight intensity={0.02} />
 
-        <Suspense fallback={null}>
-          <PC groupRef={ref} hoveredKey={hoveredKey} onReady={onReady} />
-          <ContactShadows position={[0, -1.5, 0]} opacity={0.7} scale={12} blur={1.6} far={4} resolution={512} color='#000000' />
-          <Preload all />
-        </Suspense>
+          <Suspense fallback={null}>
+            <PC groupRef={ref} hoveredKey={hoveredKey} onReady={onReady} />
+            <ContactShadows position={[0, -1.5, 0]} opacity={0.7} scale={12} blur={1.6} far={4} resolution={512} color='#000000' />
+            <Preload all />
+          </Suspense>
 
-        <EffectComposer>
-          <N8AO aoRadius={0.35} intensity={2.4} distanceFalloff={0.8} quality='medium' color='#000000' />
-          <Bloom intensity={0.1} luminanceThreshold={1} luminanceSmoothing={1} radius={0.1} mipmapBlur />
-        </EffectComposer>
-      </Canvas>
-    </div>
+          {/*
+            EffectComposer の children は JSX.Element しか受けないので、
+            絞りによるボケ（F8〜F16 の想定では効かないため既定はオフ）は
+            空フラグメントで出し入れする
+          */}
+          <EffectComposer>
+            <N8AO aoRadius={0.35} intensity={2.4} distanceFalloff={0.8} quality='medium' color='#000000' />
+            {camera.dof.enabled ? (
+              <DepthOfField
+                focusDistance={camera.dof.focusDistance}
+                focusRange={camera.dof.focusRange}
+                bokehScale={camera.dof.bokehScale}
+              />
+            ) : (
+              <></>
+            )}
+            <Bloom intensity={0.1} luminanceThreshold={1} luminanceSmoothing={1} radius={0.1} mipmapBlur />
+          </EffectComposer>
+        </Canvas>
+      </div>
+    </>
   );
 }

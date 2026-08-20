@@ -75,3 +75,31 @@ export function productShot({
   ];
   return { fov, distance, position };
 }
+
+/**
+ * 許容錯乱円（mm）。「これ以上ボケたら人の目に分かる」というしきい値で、
+ * 写真では慣用的にセンサー対角 / 1500 を使う。被写界深度の計算に要る。
+ */
+export function circleOfConfusion(sensor: SensorName): number {
+  const { width, height } = sensors[sensor];
+  return Math.hypot(width, height) / 1500;
+}
+
+/**
+ * 被写界深度（ピントが合って見える手前〜奥の範囲）を実寸 mm で返す。
+ * subjectDistance も mm。3D 側はワールド単位なので、呼ぶ側で
+ * 「1 ワールド単位 = 何 mm か」を決めて換算する必要がある。
+ *
+ * 絞るほど（F 値が大きいほど）範囲は広がり、過焦点距離を超えると
+ * 奥は無限遠までピントが合う＝ far は Infinity になる。
+ */
+export function depthOfField(sensor: SensorName, focalLength: number, fNumber: number, subjectDistance: number) {
+  const c = circleOfConfusion(sensor);
+  const f = focalLength;
+  const s = subjectDistance;
+  const hyperfocal = (f * f) / (fNumber * c) + f;
+  const near = (s * (hyperfocal - f)) / (hyperfocal + s - 2 * f);
+  const behind = hyperfocal - s;
+  const far = behind <= 0 ? Infinity : (s * (hyperfocal - f)) / behind;
+  return { hyperfocal, near, far };
+}
