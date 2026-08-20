@@ -10,6 +10,32 @@ import type { Group } from 'three';
 // コンポーネント
 import { PC } from './Model';
 import { Bloom, EffectComposer, N8AO } from '@react-three/postprocessing';
+import { productShot } from '../../../_utils/cameraPresets';
+
+// ---------------------------
+// カメラ：中判 + 100mm マクロの物撮りを想定した設定
+// ---------------------------
+// 直交投影は面がまったく収束しないので図面寄りに見える。実機の物撮りに寄せるため
+// パースペクティブへ。ただし 100mm は望遠側なので収束はごく浅く、
+// プロダクトカタログのような「わずかに立体が回り込む」程度に収まる。
+//   ・中判（Phase One XF IQ4 / Hasselblad, 53.4 x 40mm）@100mm → 垂直画角 22.62°
+//   ・フルサイズ（EOS R5 / α7R V, 36 x 24mm）@100mm なら 13.69°
+//     → さらにパースが浅くなる。切り替えは sensor を 'fullFrame' にするだけ
+// F8〜F16 相当の被写界深度なので DepthOfField（ボケ）は入れない。
+// ISO 100 / 三脚なので粒子ノイズもカメラの揺れも足さない（動くのは被写体側だけ）。
+const CAMERA_TARGET: [number, number, number] = [0, 0.06, 0];
+const CAMERA = productShot({
+  sensor: 'mediumFormat',
+  focalLength: 100,
+  target: CAMERA_TARGET,
+  // 直交投影のときの視線（[0,-0.3,2] → [0,0.06,0]）をそのまま使い、アングルは変えない
+  direction: [0, -0.36, 2],
+  // 旧 zoom 300 × 画面高 900px と同じ写り。基準面で縦 3 ワールド単位
+  frameHeight: 3,
+  // ピントを置く面＝PC の前面。注視点より 0.67 ほど手前にあり、
+  // ここで合わせないと直交投影のときより 1 割ほど大きく写ってしまう
+  subjectDepth: 0.67,
+});
 
 export function CanvasPC({
   ref,
@@ -23,10 +49,12 @@ export function CanvasPC({
   return (
     <div className='fixed inset-0 z-30 pointer-events-none'>
       <Canvas
-        orthographic camera={{ position: [0, -0.3, 2], zoom: 300 }}
+        // near/far は被写体の周りだけに絞る。パースは深度バッファが非線形なので、
+        // 既定の 0.1〜1000 のままだと精度が落ちて N8AO の陰りが荒れる
+        camera={{ fov: CAMERA.fov, position: CAMERA.position, near: 0.5, far: 100 }}
         shadows='soft'
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.15 }}
-        onCreated={({ camera, gl }) => { camera.lookAt(0, 0.06, 0); gl.outputColorSpace = THREE.SRGBColorSpace; gl.setPixelRatio(1); }}
+        onCreated={({ camera, gl }) => { camera.lookAt(...CAMERA_TARGET); gl.outputColorSpace = THREE.SRGBColorSpace; gl.setPixelRatio(1); }}
       >
 
         <Environment resolution={512} background={false}>
