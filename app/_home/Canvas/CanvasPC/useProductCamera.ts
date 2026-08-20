@@ -112,10 +112,10 @@ export function useProductCamera() {
       info: { label: '情報', value: '', editable: false },
     }),
     絞り: folder({
-      dof: { label: '被写界深度を出す', value: false },
+      dof: { label: 'ボケを出す', value: false },
       fNumber: { label: 'F値', value: 8, options: F_STOPS },
       bokehScale: { label: 'ボケの強さ', value: 3, min: 0, max: 12, step: 0.5 },
-      unitMM: { label: '1ユニットの実寸 mm', value: DEFAULT_UNIT_MM, min: 20, max: 2000, step: 5 },
+      unitMM: { label: '1単位=mm', value: DEFAULT_UNIT_MM, min: 20, max: 2000, step: 5 },
       dofInfo: { label: 'ピント範囲', value: '', editable: false },
     }),
   }));

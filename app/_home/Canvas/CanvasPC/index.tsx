@@ -1,7 +1,7 @@
 'use client';
 
 // React
-import { Suspense, useLayoutEffect } from 'react';
+import { Suspense, useLayoutEffect, useSyncExternalStore } from 'react';
 // THREE
 import { Canvas, useThree } from '@react-three/fiber';
 import { ContactShadows, Environment, Lightformer, Preload } from '@react-three/drei';
@@ -78,6 +78,23 @@ function ProductCamera({
   return null;
 }
 
+/**
+ * 調整パネルを出すかどうか。
+ * ローカルの開発サーバーでは常に出す。ビルド済み（Vercel のプレビューなど）では
+ * URL に ?leva を付けたときだけ出すので、公開ページには出てこない。
+ *
+ * useSyncExternalStore を使うのは、サーバー側で描いた HTML と食い違わせないため。
+ * サーバーでは必ず false、クライアントでは URL を見た結果を返す。
+ */
+const noopSubscribe = () => () => {};
+const readLevaVisible = () =>
+  process.env.NODE_ENV !== 'production' || new URLSearchParams(window.location.search).has('leva');
+const levaHiddenOnServer = () => false;
+
+function useLevaVisible() {
+  return useSyncExternalStore(noopSubscribe, readLevaVisible, levaHiddenOnServer);
+}
+
 export function CanvasPC({
   ref,
   hoveredKey,
@@ -88,11 +105,11 @@ export function CanvasPC({
   onReady?: () => void;
 }) {
   const camera = useProductCamera();
+  const levaVisible = useLevaVisible();
 
   return (
     <>
-      {/* 本番ではパネルを畳んで隠す。値は useControls の既定値がそのまま効く */}
-      <Leva collapsed hidden={process.env.NODE_ENV === 'production'} titleBar={{ title: 'PC カメラ' }} />
+      <Leva hidden={!levaVisible} titleBar={{ title: 'PC カメラ' }} />
       <div className='fixed inset-0 z-30 pointer-events-none'>
         <Canvas
           // near/far は被写体の周りだけに絞る。パースは深度バッファが非線形なので、
