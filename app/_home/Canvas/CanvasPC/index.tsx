@@ -1,18 +1,27 @@
 'use client';
 
 // React
-import { Suspense, useLayoutEffect, useSyncExternalStore } from 'react';
+import { Suspense, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 // THREE
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, Environment, Lightformer, Preload } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Group } from 'three';
+import type { DepthOfFieldEffect } from 'postprocessing';
 // Leva（開発時のカメラ調整パネル）
 import { Leva } from 'leva';
 // コンポーネント
 import { PC } from './Model';
 import { Bloom, DepthOfField, EffectComposer, N8AO } from '@react-three/postprocessing';
-import { CAMERA_FAR, CAMERA_INITIAL, CAMERA_NEAR, useProductCamera } from './useProductCamera';
+import { depthOfField, type SensorName } from '../../../_utils/cameraPresets';
+import {
+  CAMERA_FAR,
+  CAMERA_INITIAL,
+  CAMERA_NEAR,
+  MONITOR_NODE_NAME,
+  useProductCamera,
+  type FocusMode,
+} from './useProductCamera';
 
 // ---------------------------
 // カメラ：中判 + 80mm の物撮りを想定した設定
@@ -79,6 +88,78 @@ function ProductCamera({
 }
 
 /**
+ * ピント面をモニターのジオメトリーに合わせる。
+ *
+ * モニターはポインターに合わせて回るので前面までの距離が毎フレーム変わる。
+ * focusDistance を React の prop で渡すと DepthOfField が作り直されてしまうので、
+ * 効果の cocMaterial を直接書き換える。
+ */
+function FocusRig({
+  mode,
+  offset,
+  manual,
+  showMarker,
+  distanceRef,
+  dofRef,
+  aperture,
+}: {
+  mode: FocusMode;
+  offset: number;
+  manual: number;
+  showMarker: boolean;
+  distanceRef: React.RefObject<number>;
+  dofRef: React.RefObject<DepthOfFieldEffect | null>;
+  aperture: { sensor: SensorName; focalLength: number; fNumber: number; unitMM: number };
+}) {
+  const get = useThree((state) => state.get);
+  const markerRef = useRef<THREE.Mesh>(null);
+  // 毎フレーム new しないよう使い回す
+  const [box] = useState(() => new THREE.Box3());
+  const [point] = useState(() => new THREE.Vector3());
+
+  useFrame(() => {
+    const { camera, scene } = get();
+    const monitor = mode === 'manual' ? null : scene.getObjectByName(MONITOR_NODE_NAME);
+
+    if (monitor) {
+      // Box3.setFromObject は geometry のキャッシュ済みバウンディングボックスを
+      // 使うので、毎フレーム呼んでも頂点は舐めない
+      box.setFromObject(monitor);
+      // 前面＝箱のうちカメラにいちばん近い点。clampPoint が外側の点を面へ寄せる
+      if (mode === 'center') box.getCenter(point);
+      else box.clampPoint(camera.position, point);
+    } else {
+      // 手動：視線方向に指定距離だけ進んだ点
+      camera.getWorldDirection(point).multiplyScalar(manual).add(camera.position);
+    }
+
+    const distance = Math.max(camera.position.distanceTo(point) + offset, 0.05);
+    distanceRef.current = distance;
+    if (markerRef.current) markerRef.current.position.copy(point);
+
+    const dof = dofRef.current;
+    if (dof) {
+      const { sensor, focalLength, fNumber, unitMM } = aperture;
+      const limits = depthOfField(sensor, focalLength, fNumber, distance * unitMM);
+      // focusRange は「そこまで離れると完全にボケる」半幅。被写界深度の
+      // 手前側と奥側の狭いほうを採るので、絞るほど素直に効きが弱くなる
+      const nearSide = distance * unitMM - limits.near;
+      const farSide = limits.far === Infinity ? Infinity : limits.far - distance * unitMM;
+      dof.cocMaterial.focusDistance = distance;
+      dof.cocMaterial.focusRange = Math.max(Math.min(nearSide, farSide) / unitMM, 0.001);
+    }
+  });
+
+  if (!showMarker) return null;
+  return (
+    <mesh ref={markerRef} renderOrder={999}>
+      <sphereGeometry args={[0.03, 16, 16]} />
+      <meshBasicMaterial color='#00e5ff' depthTest={false} toneMapped={false} />
+    </mesh>
+  );
+}
+
+/**
  * 調整パネルを出すかどうか。
  * ローカルの開発サーバーでは常に出す。ビルド済み（Vercel のプレビューなど）では
  * URL に ?leva を付けたときだけ出すので、公開ページには出てこない。
@@ -106,6 +187,7 @@ export function CanvasPC({
 }) {
   const camera = useProductCamera();
   const levaVisible = useLevaVisible();
+  const dofRef = useRef<DepthOfFieldEffect>(null);
 
   return (
     <>
@@ -167,6 +249,16 @@ export function CanvasPC({
           <Suspense fallback={null}>
             <PC groupRef={ref} hoveredKey={hoveredKey} onReady={onReady} />
             <ContactShadows position={[0, -1.5, 0]} opacity={0.7} scale={12} blur={1.6} far={4} resolution={512} color='#000000' />
+            {/* モデルが出そろってからでないとモニターのノードを探せない */}
+            <FocusRig
+              mode={camera.focus.mode}
+              offset={camera.focus.offset}
+              manual={camera.focus.manual}
+              showMarker={camera.focus.marker}
+              distanceRef={camera.focus.distanceRef}
+              dofRef={dofRef}
+              aperture={camera.aperture}
+            />
             <Preload all />
           </Suspense>
 
@@ -177,12 +269,9 @@ export function CanvasPC({
           */}
           <EffectComposer>
             <N8AO aoRadius={0.35} intensity={2.4} distanceFalloff={0.8} quality='medium' color='#000000' />
+            {/* focusDistance / focusRange は FocusRig が毎フレーム直接書き込む */}
             {camera.dof.enabled ? (
-              <DepthOfField
-                focusDistance={camera.dof.focusDistance}
-                focusRange={camera.dof.focusRange}
-                bokehScale={camera.dof.bokehScale}
-              />
+              <DepthOfField ref={dofRef} bokehScale={camera.dof.bokehScale} />
             ) : (
               <></>
             )}

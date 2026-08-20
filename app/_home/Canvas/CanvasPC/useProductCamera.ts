@@ -1,8 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { button, folder, useControls } from 'leva';
+import { button, folder, monitor, useControls } from 'leva';
 import { depthOfField, productShot, verticalFov, type SensorName } from '../../../_utils/cameraPresets';
+
+/** ピントをどこに置くか。front / center はモニターのジオメトリーに追従する */
+export type FocusMode = 'front' | 'center' | 'manual';
+
+/** モニターのジオメトリーを探すときに使う GLB のノード名 */
+export const MONITOR_NODE_NAME = 'monitor';
 
 /**
  * PC のカメラを Leva から触るためのフック。
@@ -55,6 +61,8 @@ export function useProductCamera() {
     sensor: CAMERA_DEFAULTS.sensor,
   });
   const setRef = useRef<((value: Record<string, unknown>) => void) | null>(null);
+  // 実際のピント距離。毎フレーム FocusRig が書き込み、パネルはこれを覗く
+  const focusDistanceRef = useRef(CAMERA_INITIAL.distance - CAMERA_DEFAULTS.subjectDepth);
 
   /** 注視点からカメラへの向きを保ったまま、距離だけ変えた位置を返す */
   const moveAlongAxis = (distance: number): Vec3 => {
@@ -111,6 +119,25 @@ export function useProductCamera() {
       }),
       info: { label: '情報', value: '', editable: false },
     }),
+    ピント: folder({
+      focusMode: {
+        label: 'ピントの置き方',
+        value: 'front' as FocusMode,
+        options: { 'モニター前面': 'front', 'モニター中心': 'center', '手動': 'manual' },
+      },
+      focusOffset: { label: '前後の微調整', value: 0, min: -1, max: 1, step: 0.005 },
+      focusManual: {
+        label: '手動の距離',
+        value: CAMERA_INITIAL.distance - CAMERA_DEFAULTS.subjectDepth,
+        min: 0.5,
+        max: 30,
+        step: 0.01,
+      },
+      focusMarker: { label: 'ピント位置を表示', value: false },
+      // 毎フレーム変わるので state ではなく ref を覗かせる。
+      // monitor は label 指定を持たないのでキーがそのまま表示名になる
+      '実際の距離': monitor(focusDistanceRef, { interval: 150 }),
+    }),
     絞り: folder({
       dof: { label: 'ボケを出す', value: false },
       fNumber: { label: 'F値', value: 8, options: F_STOPS },
@@ -122,7 +149,9 @@ export function useProductCamera() {
 
   // leva の select は string で返ってくるので、扱う型に戻す
   const sensor = values.sensor as SensorName;
+  const focusMode = values.focusMode as FocusMode;
   const { focalLength, position, target, dof, fNumber, bokehScale, unitMM } = values;
+  const { focusOffset, focusManual, focusMarker } = values;
 
   const positionTuple = toTuple(position);
   const targetTuple = toTuple(target);
@@ -143,23 +172,19 @@ export function useProductCamera() {
   // ---------------------------
   // 絞り → 被写界深度
   // ---------------------------
-  // ピントは注視点ではなく被写体の前面（subjectDepth のぶん手前）に置く
-  const focusDistance = Math.max(distance - CAMERA_DEFAULTS.subjectDepth, 0.01);
-  const limits = depthOfField(sensor, focalLength, fNumber, focusDistance * unitMM);
-  // focusRange は「そこまで離れると完全にボケる」半幅。被写界深度の
-  // 手前側と奥側の狭いほうを採用しておくと、絞るほど素直に効きが弱くなる
-  const nearSide = focusDistance * unitMM - limits.near;
-  const farSide = limits.far === Infinity ? Infinity : limits.far - focusDistance * unitMM;
-  const focusRange = Math.max(Math.min(nearSide, farSide) / unitMM, 0.001);
+  // 実際のピント距離は毎フレーム FocusRig が決めるので、ここで出すのは
+  // パネルに表示するための目安（構図の基準にしている被写体前面での値）
+  const nominalFocus = Math.max(distance - CAMERA_DEFAULTS.subjectDepth, 0.01);
+  const limits = depthOfField(sensor, focalLength, fNumber, nominalFocus * unitMM);
 
   const fmt = (mm: number) => (mm === Infinity ? '∞' : mm >= 1000 ? `${(mm / 1000).toFixed(2)}m` : `${Math.round(mm)}mm`);
 
   useEffect(() => {
     set({
       info: `画角 ${fov.toFixed(2)}° / 距離 ${distance.toFixed(2)}`,
-      dofInfo: `${fmt(limits.near)} 〜 ${fmt(limits.far)}（被写体まで ${fmt(focusDistance * unitMM)}）`,
+      dofInfo: `${fmt(limits.near)} 〜 ${fmt(limits.far)}（被写体まで ${fmt(nominalFocus * unitMM)}）`,
     });
-  }, [set, fov, distance, limits.near, limits.far, focusDistance, unitMM]);
+  }, [set, fov, distance, limits.near, limits.far, nominalFocus, unitMM]);
 
   return {
     fov,
@@ -167,6 +192,14 @@ export function useProductCamera() {
     target: targetTuple,
     near: CAMERA_NEAR,
     far: CAMERA_FAR,
-    dof: { enabled: dof, focusDistance, focusRange, bokehScale },
+    dof: { enabled: dof, bokehScale },
+    focus: {
+      mode: focusMode,
+      offset: focusOffset,
+      manual: focusManual,
+      marker: focusMarker,
+      distanceRef: focusDistanceRef,
+    },
+    aperture: { sensor, focalLength, fNumber, unitMM },
   };
 }
